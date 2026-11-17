@@ -482,6 +482,8 @@ public partial class MainWindow : Window
         SoundBox.IsChecked = settings.Sound;
         FlashBox.IsChecked = settings.Flash;
         ThemeBox.SelectedIndex = settings.DarkMode ? 1 : 0;
+        TimeFormatBox.SelectedIndex = settings.Use24HourTime ? 1 : 0;
+        InitializeTimePickers();
         DurationBox.Text = settings.DefaultDuration.ToString();
         if (ShowDashboardCardsBox != null) ShowDashboardCardsBox.IsChecked = settings.ShowDashboardCards;
         if (DailySummaryEnabledBox != null) DailySummaryEnabledBox.IsChecked = settings.DailySummaryEnabled;
@@ -515,6 +517,7 @@ public partial class MainWindow : Window
         public bool Sound { get; set; } = true;
         public bool Flash { get; set; } = true;
         public bool DarkMode { get; set; }
+        public bool Use24HourTime { get; set; } = false;
         public int DefaultDuration { get; set; } = 30;
         public bool ShowDashboardCards { get; set; } = true;
         public string AlertPosition { get; set; } = "Center";
@@ -536,6 +539,7 @@ public partial class MainWindow : Window
         settings.Sound = SoundBox.IsChecked == true;
         settings.Flash = FlashBox.IsChecked == true;
         settings.DarkMode = ThemeBox.SelectedIndex == 1;
+        settings.Use24HourTime = TimeFormatBox.SelectedIndex == 1;
         settings.DefaultDuration = int.TryParse(DurationBox.Text, out var n) && n > 0 && n <= 1440 ? n : 30;
         if (ShowDashboardCardsBox != null) settings.ShowDashboardCards = ShowDashboardCardsBox.IsChecked == true;
         if (AlertPositionBox?.SelectedItem is System.Windows.Controls.ComboBoxItem posItem)
@@ -587,7 +591,21 @@ public partial class MainWindow : Window
         if (!IsLoaded || loadingSettings || RootPanel == null || SoundBox == null || FlashBox == null || DurationBox == null) return;
         PersistSettings();
         ApplyTheme();
+        InitializeTimePickers();
+        RefreshStatus();
+        RenderMonth();
         InitializeStreamDeckBridge();
+    }
+
+    private string FormatMeetingTime(DateTime value) => value.ToString(settings.Use24HourTime ? "HH:mm" : "h:mm tt", CultureInfo.GetCultureInfo("en-GB"));
+
+    private bool TryReadMeetingTime(string text, out TimeSpan time)
+    {
+        if (TimeSpan.TryParseExact(text.Trim(), @"hh\:mm", CultureInfo.InvariantCulture, out time) && time < TimeSpan.FromDays(1)) return true;
+        if (DateTime.TryParseExact(text.Trim(), new[] { "h:mm tt", "hh:mm tt", "h tt", "htt", "h:mmtt" }, CultureInfo.GetCultureInfo("en-GB"), DateTimeStyles.None, out var value))
+        { time = value.TimeOfDay; return true; }
+        time = default;
+        return false;
     }
 
     private bool updatingTimes;
@@ -597,10 +615,10 @@ public partial class MainWindow : Window
         if (updatingTimes || TimeBox == null || EndTimeBox == null || MeetingDurationBox == null) return;
         if (MeetingDurationBox.SelectedItem is not System.Windows.Controls.ComboBoxItem selected ||
             !int.TryParse(selected.Tag?.ToString(), out int duration)) return;
-        if (!TimeSpan.TryParseExact(TimeBox.Text.Trim(), @"hh\:mm", CultureInfo.InvariantCulture, out var start)) return;
+        if (!TryReadMeetingTime(TimeBox.Text, out var start)) return;
         if (start.TotalMinutes + duration >= 1440) return;
         updatingTimes = true;
-        EndTimeBox.Text = (start + TimeSpan.FromMinutes(duration)).ToString(@"hh\:mm");
+        EndTimeBox.Text = FormatMeetingTime(DateTime.Today + start + TimeSpan.FromMinutes(duration));
         updatingTimes = false;
     }
 
@@ -613,8 +631,8 @@ public partial class MainWindow : Window
     private void DetectManualDuration()
     {
         if (updatingTimes || MeetingDurationBox == null || EndTimeBox == null || TimeBox == null) return;
-        if (!TimeSpan.TryParseExact(TimeBox.Text.Trim(), @"hh\:mm", CultureInfo.InvariantCulture, out var start) ||
-            !TimeSpan.TryParseExact(EndTimeBox.Text.Trim(), @"hh\:mm", CultureInfo.InvariantCulture, out var end) || end <= start) return;
+        if (!TryReadMeetingTime(TimeBox.Text, out var start) ||
+            !TryReadMeetingTime(EndTimeBox.Text, out var end) || end <= start) return;
         int duration = (int)(end - start).TotalMinutes;
         updatingTimes = true;
         MeetingDurationBox.SelectedIndex = duration == 30 ? 0 : duration == 60 ? 1 : 2;
@@ -623,15 +641,21 @@ public partial class MainWindow : Window
 
     private void InitializeTimePickers()
     {
+        if (TimeBox == null || EndTimeBox == null) return;
+        var start = TryReadMeetingTime(TimeBox.Text, out var existingStart) ? existingStart : TimeSpan.FromHours(14);
+        var end = TryReadMeetingTime(EndTimeBox.Text, out var existingEnd) ? existingEnd : TimeSpan.FromHours(14.5);
+        updatingTimes = true;
         foreach (var picker in new[] { TimeBox, EndTimeBox })
         {
+            picker.Items.Clear();
             for (int hour = 0; hour < 24; hour++)
                 for (int minute = 0; minute < 60; minute += 15)
-                    picker.Items.Add($"{hour:00}:{minute:00}");
+                    picker.Items.Add(FormatMeetingTime(DateTime.Today.AddHours(hour).AddMinutes(minute)));
         }
-        TimeBox.Text = "14:00";
-        EndTimeBox.Text = "14:30";
+        TimeBox.Text = FormatMeetingTime(DateTime.Today + start);
+        EndTimeBox.Text = FormatMeetingTime(DateTime.Today + end);
         MeetingDurationBox.SelectedIndex = 0;
+        updatingTimes = false;
     }
 
     private void ApplyTheme()
@@ -780,7 +804,8 @@ public partial class MainWindow : Window
         {
             var day = first.AddDays(i);
             var currentMonth = day.Month == visibleMonth.Month;
-            var panel = new System.Windows.Controls.StackPanel { Margin = new Thickness(5) };
+            var compact = MonthCells.ActualWidth > 0 && MonthCells.ActualWidth < 780;
+            var panel = new System.Windows.Controls.StackPanel { Margin = new Thickness(compact ? 2 : 5) };
             var dayButton = new System.Windows.Controls.Button
             {
                 Content = day.Day.ToString(CultureInfo.InvariantCulture),
@@ -797,7 +822,21 @@ public partial class MainWindow : Window
             dayButton.Click += CalendarDay_Click;
             panel.Children.Add(dayButton);
             var occurrences = meetings.Where(m => OccursOn(m, day)).OrderBy(m => m.Start.TimeOfDay).ToList();
-            foreach (var meeting in occurrences.Take(3))
+            if (compact && occurrences.Count > 0)
+            {
+                var countButton = new System.Windows.Controls.Button
+                {
+                    Content = $"{occurrences.Count} meeting{(occurrences.Count == 1 ? "" : "s")}",
+                    Tag = day,
+                    FontSize = 10,
+                    Padding = new Thickness(2),
+                    ToolTip = string.Join("\n", occurrences.Select(m => $"{FormatMeetingTime(day.Date + m.Start.TimeOfDay)}  {m.Title}")),
+                    HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch
+                };
+                countButton.Click += CalendarDay_Click;
+                panel.Children.Add(countButton);
+            }
+            foreach (var meeting in (compact ? Enumerable.Empty<Meeting>() : occurrences.Take(3)))
             {
                 var occurrence = new Meeting
                 {
@@ -814,7 +853,7 @@ public partial class MainWindow : Window
                 };
                 var chip = new System.Windows.Controls.Button
                 {
-                    Content = $"{occurrence.Start:HH:mm}  {occurrence.Title}",
+                    Content = $"{FormatMeetingTime(occurrence.Start)}  {occurrence.Title}",
                     Tag = occurrence,
                     HorizontalContentAlignment = System.Windows.HorizontalAlignment.Left,
                     HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch,
@@ -824,12 +863,12 @@ public partial class MainWindow : Window
                     Foreground = System.Windows.Media.Brushes.White,
                     BorderThickness = new Thickness(0),
                     FontSize = 11,
-                    ToolTip = $"{occurrence.Title} • {occurrence.Start:HH:mm}–{occurrence.End:HH:mm} • {occurrence.Repeat}"
+                    ToolTip = $"{occurrence.Title} • {FormatMeetingTime(occurrence.Start)}–{FormatMeetingTime(occurrence.End)} • {occurrence.Repeat}"
                 };
                 chip.Click += CalendarMeeting_Click;
                 panel.Children.Add(chip);
             }
-            if (occurrences.Count > 3)
+            if (!compact && occurrences.Count > 3)
                 panel.Children.Add(new System.Windows.Controls.TextBlock { Text = $"+{occurrences.Count - 3} more", Foreground = muted, Margin = new Thickness(3, 5, 0, 0), FontSize = 11 });
             MonthCells.Children.Add(new System.Windows.Controls.Border
             {
@@ -837,10 +876,15 @@ public partial class MainWindow : Window
                 BorderBrush = borderBrush,
                 BorderThickness = new Thickness(0.5),
                 CornerRadius = new CornerRadius(5),
-                MinHeight = 100,
+                MinHeight = compact ? 55 : 100,
                 Background = (System.Windows.Media.Brush)System.Windows.Application.Current.Resources["CardBrush"]
             });
         }
+    }
+
+    private void MonthCells_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if ((e.PreviousSize.Width < 780) != (e.NewSize.Width < 780)) RenderMonth();
     }
 
     private void SearchBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
@@ -871,8 +915,8 @@ public partial class MainWindow : Window
         MeetingDate.SelectedDate = m.Start.Date;
         SelectEventColor(m.EventColor);
         updatingTimes = true;
-        TimeBox.Text = m.Start.ToString("HH:mm");
-        EndTimeBox.Text = m.End.ToString("HH:mm");
+        TimeBox.Text = FormatMeetingTime(m.Start);
+        EndTimeBox.Text = FormatMeetingTime(m.End);
         MeetingDurationBox.SelectedIndex = m.DurationMinutes == 30 ? 0 : m.DurationMinutes == 60 ? 1 : 2;
         updatingTimes = false;
         JoinBox.Text = m.JoinUrl;
@@ -1042,14 +1086,14 @@ public partial class MainWindow : Window
 
     private void Add_Click(object sender, RoutedEventArgs e)
     {
-        if (string.IsNullOrWhiteSpace(TitleBox.Text) || MeetingDate.SelectedDate is null || !TimeSpan.TryParseExact(TimeBox.Text.Trim(), @"hh\:mm", CultureInfo.InvariantCulture, out var time) || time >= TimeSpan.FromDays(1))
+        if (string.IsNullOrWhiteSpace(TitleBox.Text) || MeetingDate.SelectedDate is null || !TryReadMeetingTime(TimeBox.Text, out var time) || time >= TimeSpan.FromDays(1))
         {
-            MessageBox.Show("Enter a title, date, and time in 24-hour HH:mm format.");
+            MessageBox.Show("Enter a title, date, and valid meeting time (e.g. 2:30 PM or 14:30).");
             return;
         }
-        if (!TimeSpan.TryParseExact(EndTimeBox.Text.Trim(), @"hh\:mm", CultureInfo.InvariantCulture, out var endTime) || endTime >= TimeSpan.FromDays(1) || endTime <= time)
+        if (!TryReadMeetingTime(EndTimeBox.Text, out var endTime) || endTime >= TimeSpan.FromDays(1) || endTime <= time)
         {
-            MessageBox.Show("Enter an end time after the start time (HH:mm).");
+            MessageBox.Show("Enter an end time after the start time.");
             return;
         }
         var start = MeetingDate.SelectedDate.Value.Date + time;
