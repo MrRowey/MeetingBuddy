@@ -165,6 +165,14 @@ public partial class MainWindow : Window
         RefreshUpcoming();
     }
 
+    private void EventColor_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (SelectedEventColourPreview == null) return;
+        var hex = (EventColorBox.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Tag?.ToString() ?? "#2563EB";
+        try { SelectedEventColourPreview.Background = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex)); }
+        catch { SelectedEventColourPreview.Background = System.Windows.Media.Brushes.DodgerBlue; }
+    }
+
     private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (e.Key != System.Windows.Input.Key.Escape) return;
