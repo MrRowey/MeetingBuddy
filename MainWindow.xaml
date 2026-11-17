@@ -343,7 +343,7 @@
      <ColumnDefinition Width="Auto"/>
     </Grid.ColumnDefinitions>
     <StackPanel>
-     <TextBlock Text="Your workspace" FontSize="28" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold"/>
+     <TextBlock x:Name="WorkspaceHeading" Text="Your workspace" FontSize="28" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold"/>
      <TextBlock Text="Stay on schedule. Keep your day moving." FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0"/>
     </StackPanel>
     
@@ -571,7 +571,26 @@
     <Grid Margin="0,0,0,8">
      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
      <StackPanel Margin="4,0,0,14"><TextBlock Text="Settings" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/><TextBlock Text="Manage your workspace preferences" Foreground="{DynamicResource MutedBrush}" FontSize="12"/></StackPanel>
-     <TabControl Grid.Row="1" TabStripPlacement="Left" Background="Transparent" BorderThickness="0" ItemContainerStyle="{StaticResource SettingsCategoryTabStyle}"><TabItem Header="Appearance" FontSize="13"><ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel Margin="14,0,12,12" MaxWidth="860" HorizontalAlignment="Left"><Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="18" Margin="0">
+     <TabControl Grid.Row="1" TabStripPlacement="Left" Background="Transparent" BorderThickness="0" ItemContainerStyle="{StaticResource SettingsCategoryTabStyle}"><TabItem Header="Profile &amp; Workspace" FontSize="13">
+      <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+       <StackPanel Margin="14,0,12,12" MaxWidth="860" HorizontalAlignment="Left">
+        <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="18">
+         <StackPanel>
+          <TextBlock Text="Profile &amp; Workspace" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+          <TextBlock Text="Personalise your dashboard. These details are saved locally on this computer." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,18" TextWrapping="Wrap"/>
+          <TextBlock Text="YOUR NAME" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>
+          <TextBox x:Name="ProfileNameBox" Height="38" MaxLength="80" Margin="0,0,0,14" LostFocus="Profile_Changed"/>
+          <TextBlock Text="WORKPLACE" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>
+          <TextBox x:Name="ProfileWorkplaceBox" Height="38" MaxLength="100" Margin="0,0,0,14" LostFocus="Profile_Changed"/>
+          <TextBlock Text="JOB TITLE (OPTIONAL)" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>
+          <TextBox x:Name="ProfileJobTitleBox" Height="38" MaxLength="100" Margin="0,0,0,14" LostFocus="Profile_Changed"/>
+          <Button Content="Save profile" HorizontalAlignment="Left" Padding="18,9" Click="SaveProfile_Click"/>
+         </StackPanel>
+        </Border>
+       </StackPanel>
+      </ScrollViewer>
+     </TabItem>
+     <TabItem Header="Appearance" FontSize="13"><ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel Margin="14,0,12,12" MaxWidth="860" HorizontalAlignment="Left"><Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="18" Margin="0">
         <StackPanel>
          <TextBlock Text="Appearance" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
          <TextBlock Text="Choose how Meeting Buddy looks and which dashboard widgets appear." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,18" TextWrapping="Wrap"/>
