@@ -552,6 +552,10 @@ public partial class MainWindow : Window
         loadingSettings = true;
         try { if (File.Exists(settingsPath)) settings = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(settingsPath)) ?? new(); }
         catch { settings = new(); }
+        ProfileNameBox.Text = settings.ProfileName ?? "";
+        ProfileWorkplaceBox.Text = settings.ProfileWorkplace ?? "";
+        ProfileJobTitleBox.Text = settings.ProfileJobTitle ?? "";
+        UpdateWorkspaceHeading();
         StartWithWindows.IsChecked = settings.StartWithWindows;
         SoundBox.IsChecked = settings.Sound;
         FlashBox.IsChecked = settings.Flash;
@@ -587,6 +591,9 @@ public partial class MainWindow : Window
 
     private sealed class AppSettings
     {
+        public string ProfileName { get; set; } = "";
+        public string ProfileWorkplace { get; set; } = "";
+        public string ProfileJobTitle { get; set; } = "";
         public bool StartWithWindows { get; set; }
         public bool Sound { get; set; } = true;
         public bool Flash { get; set; } = true;
@@ -611,6 +618,9 @@ public partial class MainWindow : Window
     private void PersistSettings()
     {
         if (!IsLoaded || loadingSettings || SoundBox == null || FlashBox == null || ThemeBox == null || DurationBox == null || StartWithWindows == null) return;
+        settings.ProfileName = ProfileNameBox?.Text.Trim() ?? "";
+        settings.ProfileWorkplace = ProfileWorkplaceBox?.Text.Trim() ?? "";
+        settings.ProfileJobTitle = ProfileJobTitleBox?.Text.Trim() ?? "";
         settings.StartWithWindows = StartWithWindows.IsChecked == true;
         settings.Sound = SoundBox.IsChecked == true;
         settings.Flash = FlashBox.IsChecked == true;
@@ -661,6 +671,30 @@ public partial class MainWindow : Window
             CustomSoundPathText.Text = $"Custom sound: {picker.FileName}";
             PersistSettings();
         }
+    }
+
+    private void UpdateWorkspaceHeading()
+    {
+        if (WorkspaceHeading == null) return;
+        var name = settings.ProfileName?.Trim();
+        var workplace = settings.ProfileWorkplace?.Trim();
+        WorkspaceHeading.Text = !string.IsNullOrEmpty(name) ? $"Welcome back, {name}" :
+            !string.IsNullOrEmpty(workplace) ? $"{workplace} workspace" : "Your workspace";
+        WorkspaceHeading.ToolTip = string.IsNullOrWhiteSpace(settings.ProfileJobTitle)
+            ? workplace : $"{settings.ProfileJobTitle} · {workplace}";
+    }
+
+    private void Profile_Changed(object sender, RoutedEventArgs e)
+    {
+        if (!IsLoaded || loadingSettings) return;
+        PersistSettings();
+        UpdateWorkspaceHeading();
+    }
+
+    private void SaveProfile_Click(object sender, RoutedEventArgs e)
+    {
+        PersistSettings();
+        UpdateWorkspaceHeading();
     }
 
     private void Settings_Changed(object sender, RoutedEventArgs e)
