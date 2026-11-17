@@ -48,17 +48,44 @@ public partial class AlertWindow : Window
 
         bool hasLink = Uri.TryCreate(url, UriKind.Absolute, out var uri) && (uri.Scheme == "https" || uri.Scheme == "http");
         JoinButton.Visibility = hasLink ? Visibility.Visible : Visibility.Collapsed;
+        if (hasLink)
+        {
+            var host = uri!.Host.ToLowerInvariant();
+            JoinButton.Content = host == "teams.microsoft.com" || host.EndsWith(".teams.microsoft.com", StringComparison.Ordinal) ? "Join Teams"
+                : host == "meet.google.com" ? "Join Google Meet"
+                : host == "zoom.us" || host.EndsWith(".zoom.us", StringComparison.Ordinal) ? "Join Zoom"
+                : "Join meeting";
+        }
 
         int minutesUntilStart = (int)Math.Floor((meetingStart - DateTime.Now).TotalMinutes);
         if (!isLiveMeeting && minutesUntilStart >= 1 && onSnooze != null)
         {
-            int snoozeMins = Math.Min(2, minutesUntilStart);
-            SnoozeButton.Tag = snoozeMins;
-            SnoozeButton.Content = snoozeMins == 1 ? "Snooze 1 min" : $"Snooze {snoozeMins} min";
-            SnoozeButton.Visibility = Visibility.Visible;
+            foreach (int minutes in new[] { 1, 2, 5, 10, 15 })
+            {
+                if (minutes >= minutesUntilStart) continue; // Snooze must trigger before the meeting.
+                SnoozeDurationBox.Items.Add(new System.Windows.Controls.ComboBoxItem
+                {
+                    Content = $"{minutes} min",
+                    Tag = minutes,
+                    Foreground = System.Windows.Media.Brushes.White,
+                    Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(48, 59, 77))
+                });
+            }
+            if (SnoozeDurationBox.Items.Count > 0)
+            {
+                SnoozeDurationBox.SelectedIndex = Math.Min(1, SnoozeDurationBox.Items.Count - 1);
+                SnoozeDurationBox.Visibility = Visibility.Visible;
+                SnoozeButton.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                SnoozeDurationBox.Visibility = Visibility.Collapsed;
+                SnoozeButton.Visibility = Visibility.Collapsed;
+            }
         }
         else
         {
+            SnoozeDurationBox.Visibility = Visibility.Collapsed;
             SnoozeButton.Visibility = Visibility.Collapsed;
         }
 
@@ -81,8 +108,8 @@ public partial class AlertWindow : Window
         {
             bright = !bright;
             Frame.BorderBrush = new SolidColorBrush(bright
-                ? System.Windows.Media.Color.FromRgb(220, 38, 38)
-                : System.Windows.Media.Color.FromRgb(255, 190, 65));
+                ? System.Windows.Media.Color.FromRgb(37, 99, 235)
+                : System.Windows.Media.Color.FromRgb(96, 165, 250));
         };
         if (flashing) flash.Start();
         Closed += (_, _) => flash.Stop();
@@ -99,7 +126,15 @@ public partial class AlertWindow : Window
 
     private void PositionWindow()
     {
-        var workArea = SystemParameters.WorkArea;
+        // Use the monitor containing the pointer when the alert appears.
+        // Convert physical monitor pixels to WPF device-independent units.
+        var screen = System.Windows.Forms.Screen.FromPoint(System.Windows.Forms.Cursor.Position);
+        var area = screen.WorkingArea;
+        var source = System.Windows.PresentationSource.FromVisual(this);
+        var transform = source?.CompositionTarget?.TransformFromDevice ?? System.Windows.Media.Matrix.Identity;
+        var topLeft = transform.Transform(new System.Windows.Point(area.Left, area.Top));
+        var bottomRight = transform.Transform(new System.Windows.Point(area.Right, area.Bottom));
+        var workArea = new Rect(topLeft, bottomRight);
         const double margin = 20;
         switch (positionMode)
         {
@@ -159,7 +194,7 @@ public partial class AlertWindow : Window
     private void Snooze_Click(object sender, RoutedEventArgs e)
     {
         if (isLiveMeeting) return;
-        int mins = SnoozeButton.Tag is int m ? m : 2;
+        int mins = (SnoozeDurationBox.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Tag is int m ? m : 1;
         onSnooze?.Invoke(mins);
         canClose = true;
         Close();

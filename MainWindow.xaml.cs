@@ -69,8 +69,79 @@ public partial class MainWindow : Window
     private string viewMode = "Today";
     private string searchQuery = "";
     private bool paused;
+    private bool syncingReminderToggle;
+    private sealed class PtoPeriod
+    {
+        public DateTime Start { get; set; }
+        public DateTime End { get; set; }
+        public override string ToString() => $"{Start:dd MMM yyyy} – {End:dd MMM yyyy}";
+    }
+    private bool IsOnPto(DateTime date) => settings.TimeOff?.Any(p => date.Date >= p.Start.Date && date.Date <= p.End.Date) == true;
+    private void RefreshPtoList()
+    {
+        if (PtoList == null) return;
+        PtoList.ItemsSource = null;
+        PtoList.ItemsSource = settings.TimeOff;
+    }
+    private void AddPto_Click(object sender, RoutedEventArgs e)
+    {
+        if (PtoStartDate.SelectedDate is not DateTime start || PtoEndDate.SelectedDate is not DateTime end || end.Date < start.Date)
+        {
+            MessageBox.Show("Choose a valid start and end date.", "Time Off"); return;
+        }
+        settings.TimeOff ??= new();
+        settings.TimeOff.Add(new PtoPeriod { Start = start.Date, End = end.Date });
+        PersistSettings();
+        RefreshPtoList();
+        RefreshStatus();
+    }
+    private void RemovePto_Click(object sender, RoutedEventArgs e)
+    {
+        if (PtoList.SelectedItem is not PtoPeriod selected) return;
+        settings.TimeOff?.Remove(selected);
+        PersistSettings();
+        RefreshPtoList();
+        RefreshStatus();
+    }
     private readonly HashSet<string> missedKeys = new();
     private readonly Dictionary<string, HashSet<int>> alertStages = new();
+    private readonly string reminderStatePath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "MeetingBuddy", "reminder-state.json");
+
+    private void LoadReminderState()
+    {
+        try
+        {
+            if (!File.Exists(reminderStatePath)) return;
+            var saved = JsonSerializer.Deserialize<Dictionary<string, HashSet<int>>>(File.ReadAllText(reminderStatePath));
+            if (saved == null) return;
+            foreach (var entry in saved)
+                if (entry.Value != null) alertStages[entry.Key] = entry.Value;
+        }
+        catch (JsonException)
+        {
+            // A damaged cache should never prevent the application starting.
+            try { File.Move(reminderStatePath, reminderStatePath + ".corrupt", true); } catch (IOException) { }
+        }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
+    }
+
+    private void SaveReminderState()
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(reminderStatePath)!);
+            var temp = reminderStatePath + ".tmp";
+            File.WriteAllText(temp, JsonSerializer.Serialize(alertStages));
+            File.Move(temp, reminderStatePath, true);
+        }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
+    }
+
+    private DateTime lastReminderCheck = DateTime.Now;
     private string lastDailySummaryDate = "";
     private AppSettings settings = new();
 
@@ -83,20 +154,26 @@ public partial class MainWindow : Window
         MissedList.ItemsSource = missedEntries;
         MainTabs.SelectionChanged += (_, e) => { if (ReferenceEquals(e.Source, MainTabs)) UpdateSidebarSelection(); };
         UpdateSidebarSelection();
+        SizeChanged += (_, _) => UpdateResponsiveLayout();
         LoadSettings();
+        PtoStartDate.SelectedDate = DateTime.Today;
+        PtoEndDate.SelectedDate = DateTime.Today;
+        RefreshPtoList();
+        paused = settings.RemindersPaused;
         MainTabs.SelectedIndex = 0;
         UpdateSidebarSelection();
+        UpdateResponsiveLayout();
         ViewBox.SelectedIndex = 0;
         ApplyTheme();
         RefreshStatus();
         RepeatBox.SelectionChanged += (_, _) => UpdateWeekdaysVisibility();
         UpdateWeekdaysVisibility();
-        tray = new Forms.NotifyIcon { Icon = System.Drawing.SystemIcons.Information, Text = "Meeting Buddy", Visible = true };
+        tray = new Forms.NotifyIcon { Icon = System.Drawing.Icon.ExtractAssociatedIcon(Environment.ProcessPath!) ?? System.Drawing.SystemIcons.Information, Text = "Meeting Buddy", Visible = true };
         var menu = new Forms.ContextMenuStrip();
         menu.Items.Add("Open", null, (_, _) => Dispatcher.Invoke(ShowApp));
         menu.Items.Add("Add meeting", null, (_, _) => Dispatcher.Invoke(() => { ShowApp(); CancelEdit_Click(this, new RoutedEventArgs()); OpenMeetingDialog(); }));
         menu.Items.Add("Daily Summary", null, (_, _) => Dispatcher.Invoke(() => { ShowApp(); ShowDailySummary(); }));
-        menu.Items.Add("Pause / Resume alerts", null, (_, _) => Dispatcher.Invoke(() => { paused = !paused; RefreshStatus(); }));
+        menu.Items.Add("Pause / Resume alerts", null, (_, _) => Dispatcher.Invoke(() => { ToggleReminders(); }));
         menu.Items.Add("Exit", null, (_, _) => Dispatcher.Invoke(ExitApp));
         tray.ContextMenuStrip = menu;
         tray.DoubleClick += (_, _) => Dispatcher.Invoke(ShowApp);
@@ -111,6 +188,7 @@ public partial class MainWindow : Window
                 });
         };
         Load();
+        LoadReminderState();
         InitializeImportFolder();
         InitializeStreamDeckBridge();
         if (Environment.GetCommandLineArgs().Any(a => a.Equals("--tray", StringComparison.OrdinalIgnoreCase)))
@@ -123,10 +201,38 @@ public partial class MainWindow : Window
         ticker.Start();
         CheckMeetings();
         RefreshUpcoming();
+        if (!settings.OnboardingCompleted && !Environment.GetCommandLineArgs().Any(x => x.Equals("--tray", StringComparison.OrdinalIgnoreCase)))
+            Dispatcher.BeginInvoke(new Action(ShowFirstRunSetup), DispatcherPriority.ApplicationIdle);
+    }
+
+    private void EventColor_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (SelectedEventColourPreview == null) return;
+        var hex = (EventColorBox.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Tag?.ToString() ?? "#2563EB";
+        try { SelectedEventColourPreview.Background = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex)); }
+        catch { SelectedEventColourPreview.Background = System.Windows.Media.Brushes.DodgerBlue; }
     }
 
     private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
+        if (System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.Control &&
+            e.Key == System.Windows.Input.Key.N &&
+            MeetingDialogOverlay.Visibility != Visibility.Visible &&
+            MeetingDetailsOverlay.Visibility != Visibility.Visible)
+        {
+            OpenMeetingDialog();
+            e.Handled = true;
+            return;
+        }
+        if (System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.Control &&
+            e.Key == System.Windows.Input.Key.P &&
+            MeetingDialogOverlay.Visibility != Visibility.Visible &&
+            MeetingDetailsOverlay.Visibility != Visibility.Visible)
+        {
+            ToggleReminders();
+            e.Handled = true;
+            return;
+        }
         if (e.Key != System.Windows.Input.Key.Escape) return;
         if (DailySummaryOverlay.Visibility == Visibility.Visible)
         {
@@ -433,14 +539,21 @@ public partial class MainWindow : Window
         UpdateSidebarSelection();
     }
 
+    private void UpdateResponsiveLayout()
+    {
+        if (SidebarColumn == null) return;
+        SidebarColumn.Width = new GridLength(ActualWidth < 960 ? 175 : 220);
+    }
+
     private void UpdateSidebarSelection()
     {
+        if (OverviewNavButton == null || PreferencesNavButton == null) return;
         var buttons = new[] { OverviewNavButton, PreferencesNavButton };
         for (int i = 0; i < buttons.Length; i++)
         {
             bool active = MainTabs.SelectedIndex == (i == 0 ? 0 : 2);
             buttons[i].Background = new System.Windows.Media.SolidColorBrush(
-                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(active ? (settings.DarkMode ? "#29466D" : "#243C60") : (settings.DarkMode ? "#101722" : "#101D35")));
+                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(active ? "#29466D" : (settings.DarkMode ? "#101722" : "#101D35")));
             buttons[i].Foreground = new System.Windows.Media.SolidColorBrush(
                 (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(active ? "#FFFFFF" : "#D6E3F5"));
         }
@@ -478,10 +591,19 @@ public partial class MainWindow : Window
         loadingSettings = true;
         try { if (File.Exists(settingsPath)) settings = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(settingsPath)) ?? new(); }
         catch { settings = new(); }
+        ProfileNameBox.Text = settings.ProfileName ?? "";
+        ProfileWorkplaceBox.Text = settings.ProfileWorkplace ?? "";
+        ProfileJobTitleBox.Text = settings.ProfileJobTitle ?? "";
+        PlatformTeamsBox.IsChecked = settings.PlatformTeams;
+        PlatformZoomBox.IsChecked = settings.PlatformZoom;
+        PlatformMeetBox.IsChecked = settings.PlatformMeet;
+        UpdateWorkspaceHeading();
         StartWithWindows.IsChecked = settings.StartWithWindows;
         SoundBox.IsChecked = settings.Sound;
         FlashBox.IsChecked = settings.Flash;
         ThemeBox.SelectedIndex = settings.DarkMode ? 1 : 0;
+        TimeFormatBox.SelectedIndex = settings.Use24HourTime ? 1 : 0;
+        InitializeTimePickers();
         DurationBox.Text = settings.DefaultDuration.ToString();
         if (ShowDashboardCardsBox != null) ShowDashboardCardsBox.IsChecked = settings.ShowDashboardCards;
         if (DailySummaryEnabledBox != null) DailySummaryEnabledBox.IsChecked = settings.DailySummaryEnabled;
@@ -511,10 +633,18 @@ public partial class MainWindow : Window
 
     private sealed class AppSettings
     {
+        public bool OnboardingCompleted { get; set; }
+        public string ProfileName { get; set; } = "";
+        public string ProfileWorkplace { get; set; } = "";
+        public string ProfileJobTitle { get; set; } = "";
+        public bool PlatformTeams { get; set; } = true;
+        public bool PlatformZoom { get; set; } = true;
+        public bool PlatformMeet { get; set; } = true;
         public bool StartWithWindows { get; set; }
         public bool Sound { get; set; } = true;
         public bool Flash { get; set; } = true;
         public bool DarkMode { get; set; }
+        public bool Use24HourTime { get; set; } = false;
         public int DefaultDuration { get; set; } = 30;
         public bool ShowDashboardCards { get; set; } = true;
         public string AlertPosition { get; set; } = "Center";
@@ -525,17 +655,26 @@ public partial class MainWindow : Window
         public string WorkdayStart { get; set; } = "08:00";
         public string WorkdayEnd { get; set; } = "17:00";
         public List<DayOfWeek> WorkingDays { get; set; } = new() { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday };
-        public bool StreamDeckEnabled { get; set; } = true;
+        public bool StreamDeckEnabled { get; set; } = false;
+        public bool RemindersPaused { get; set; } = false;
+        public List<PtoPeriod> TimeOff { get; set; } = new();
         public int StreamDeckPort { get; set; } = 48291;
     }
 
     private void PersistSettings()
     {
         if (!IsLoaded || loadingSettings || SoundBox == null || FlashBox == null || ThemeBox == null || DurationBox == null || StartWithWindows == null) return;
+        settings.ProfileName = ProfileNameBox?.Text.Trim() ?? "";
+        settings.ProfileWorkplace = ProfileWorkplaceBox?.Text.Trim() ?? "";
+        settings.ProfileJobTitle = ProfileJobTitleBox?.Text.Trim() ?? "";
+        settings.PlatformTeams = PlatformTeamsBox?.IsChecked == true;
+        settings.PlatformZoom = PlatformZoomBox?.IsChecked == true;
+        settings.PlatformMeet = PlatformMeetBox?.IsChecked == true;
         settings.StartWithWindows = StartWithWindows.IsChecked == true;
         settings.Sound = SoundBox.IsChecked == true;
         settings.Flash = FlashBox.IsChecked == true;
         settings.DarkMode = ThemeBox.SelectedIndex == 1;
+        settings.Use24HourTime = TimeFormatBox.SelectedIndex == 1;
         settings.DefaultDuration = int.TryParse(DurationBox.Text, out var n) && n > 0 && n <= 1440 ? n : 30;
         if (ShowDashboardCardsBox != null) settings.ShowDashboardCards = ShowDashboardCardsBox.IsChecked == true;
         if (AlertPositionBox?.SelectedItem is System.Windows.Controls.ComboBoxItem posItem)
@@ -567,6 +706,7 @@ public partial class MainWindow : Window
         }
 
         Directory.CreateDirectory(Path.GetDirectoryName(settingsPath)!);
+        settings.RemindersPaused = paused;
         File.WriteAllText(settingsPath, JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true }));
     }
 
@@ -582,12 +722,137 @@ public partial class MainWindow : Window
         }
     }
 
+    private void RunSetupAgain_Click(object sender, RoutedEventArgs e) => ShowFirstRunSetup();
+
+    private void ShowFirstRunSetup()
+    {
+        // A lightweight first-launch dialog; existing installations are not interrupted.
+        var dialog = new Window
+        {
+            Title = "Welcome to Meeting Buddy",
+            Width = 460, Height = 590, MinWidth = 420,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Owner = this, ResizeMode = ResizeMode.NoResize,
+            Background = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(27, 35, 49)),
+            Foreground = System.Windows.Media.Brushes.White,
+            FontFamily = new System.Windows.Media.FontFamily("Segoe UI")
+        };
+        var panel = new System.Windows.Controls.StackPanel { Margin = new Thickness(26) };
+        dialog.Content = panel;
+        panel.Children.Add(new System.Windows.Controls.TextBlock
+        {
+            Text = "Set up your workspace", FontSize = 23, FontWeight = FontWeights.SemiBold,
+            Margin = new Thickness(0, 0, 0, 9)
+        });
+        panel.Children.Add(new System.Windows.Controls.TextBlock
+        {
+            Text = "A few optional details to make Meeting Buddy yours. Everything stays on this PC.",
+            TextWrapping = TextWrapping.Wrap, Foreground = System.Windows.Media.Brushes.LightGray,
+            Margin = new Thickness(0, 0, 0, 20)
+        });
+        System.Windows.Controls.TextBox AddField(string label, string value)
+        {
+            panel.Children.Add(new System.Windows.Controls.TextBlock
+            {
+                Text = label, Margin = new Thickness(0, 0, 0, 5)
+            });
+            var box = new System.Windows.Controls.TextBox
+            {
+                Text = value, Height = 34, MaxLength = 100,
+                Margin = new Thickness(0, 0, 0, 14), Padding = new Thickness(7, 5, 7, 5)
+            };
+            panel.Children.Add(box);
+            return box;
+        }
+        var name = AddField("Your name", settings.ProfileName);
+        var workplace = AddField("Workplace", settings.ProfileWorkplace);
+        var job = AddField("Job title (optional)", settings.ProfileJobTitle);
+        panel.Children.Add(new System.Windows.Controls.TextBlock
+        {
+            Text = "Meeting platforms", Margin = new Thickness(0, 0, 0, 7)
+        });
+        var teams = new System.Windows.Controls.CheckBox { Content = "Microsoft Teams", IsChecked = settings.PlatformTeams, Margin = new Thickness(0, 0, 0, 5) };
+        var zoom = new System.Windows.Controls.CheckBox { Content = "Zoom", IsChecked = settings.PlatformZoom, Margin = new Thickness(0, 0, 0, 5) };
+        var meet = new System.Windows.Controls.CheckBox { Content = "Google Meet", IsChecked = settings.PlatformMeet, Margin = new Thickness(0, 0, 0, 9) };
+        panel.Children.Add(teams);
+        panel.Children.Add(zoom);
+        panel.Children.Add(meet);
+        var save = new System.Windows.Controls.Button
+        {
+            Content = "Finish setup", Height = 40, Margin = new Thickness(0, 6, 0, 8),
+            Background = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(37, 99, 235)),
+            Foreground = System.Windows.Media.Brushes.White
+        };
+        panel.Children.Add(save);
+        var skip = new System.Windows.Controls.Button
+        {
+            Content = "Skip for now", Height = 32, Background = System.Windows.Media.Brushes.Transparent,
+            Foreground = System.Windows.Media.Brushes.LightGray
+        };
+        panel.Children.Add(skip);
+        save.Click += (_, _) =>
+        {
+            ProfileNameBox.Text = name.Text.Trim();
+            ProfileWorkplaceBox.Text = workplace.Text.Trim();
+            ProfileJobTitleBox.Text = job.Text.Trim();
+            PlatformTeamsBox.IsChecked = teams.IsChecked;
+            PlatformZoomBox.IsChecked = zoom.IsChecked;
+            PlatformMeetBox.IsChecked = meet.IsChecked;
+            settings.OnboardingCompleted = true;
+            PersistSettings();
+            UpdateWorkspaceHeading();
+            dialog.Close();
+        };
+        skip.Click += (_, _) => { settings.OnboardingCompleted = true; PersistSettings(); dialog.Close(); };
+        dialog.ShowDialog();
+    }
+
+    private void UpdateWorkspaceHeading()
+    {
+        if (WorkspaceHeading == null) return;
+        var name = settings.ProfileName?.Trim();
+        var workplace = settings.ProfileWorkplace?.Trim();
+        WorkspaceHeading.Text = !string.IsNullOrEmpty(name) ? $"Welcome back, {name}" :
+            !string.IsNullOrEmpty(workplace) ? $"{workplace} workspace" : "Your workspace";
+        WorkspaceHeading.ToolTip = string.IsNullOrWhiteSpace(settings.ProfileJobTitle)
+            ? workplace : $"{settings.ProfileJobTitle} · {workplace}";
+    }
+
+    private void Profile_Changed(object sender, RoutedEventArgs e)
+    {
+        if (!IsLoaded || loadingSettings) return;
+        PersistSettings();
+        UpdateWorkspaceHeading();
+    }
+
+    private void SaveProfile_Click(object sender, RoutedEventArgs e)
+    {
+        PersistSettings();
+        UpdateWorkspaceHeading();
+    }
+
     private void Settings_Changed(object sender, RoutedEventArgs e)
     {
         if (!IsLoaded || loadingSettings || RootPanel == null || SoundBox == null || FlashBox == null || DurationBox == null) return;
         PersistSettings();
         ApplyTheme();
+        InitializeTimePickers();
+        RefreshStatus();
+        RenderMonth();
         InitializeStreamDeckBridge();
+    }
+
+    private string FormatMeetingTime(DateTime value) => value.ToString(settings.Use24HourTime ? "HH:mm" : "h:mm tt", CultureInfo.GetCultureInfo("en-GB"));
+
+    private bool TryReadMeetingTime(string text, out TimeSpan time)
+    {
+        if (TimeSpan.TryParseExact(text.Trim(), @"hh\:mm", CultureInfo.InvariantCulture, out time) && time < TimeSpan.FromDays(1)) return true;
+        if (DateTime.TryParseExact(text.Trim(), new[] { "h:mm tt", "hh:mm tt", "h tt", "htt", "h:mmtt" }, CultureInfo.GetCultureInfo("en-GB"), DateTimeStyles.None, out var value))
+        { time = value.TimeOfDay; return true; }
+        time = default;
+        return false;
     }
 
     private bool updatingTimes;
@@ -597,10 +862,10 @@ public partial class MainWindow : Window
         if (updatingTimes || TimeBox == null || EndTimeBox == null || MeetingDurationBox == null) return;
         if (MeetingDurationBox.SelectedItem is not System.Windows.Controls.ComboBoxItem selected ||
             !int.TryParse(selected.Tag?.ToString(), out int duration)) return;
-        if (!TimeSpan.TryParseExact(TimeBox.Text.Trim(), @"hh\:mm", CultureInfo.InvariantCulture, out var start)) return;
+        if (!TryReadMeetingTime(TimeBox.Text, out var start)) return;
         if (start.TotalMinutes + duration >= 1440) return;
         updatingTimes = true;
-        EndTimeBox.Text = (start + TimeSpan.FromMinutes(duration)).ToString(@"hh\:mm");
+        EndTimeBox.Text = FormatMeetingTime(DateTime.Today + start + TimeSpan.FromMinutes(duration));
         updatingTimes = false;
     }
 
@@ -613,8 +878,8 @@ public partial class MainWindow : Window
     private void DetectManualDuration()
     {
         if (updatingTimes || MeetingDurationBox == null || EndTimeBox == null || TimeBox == null) return;
-        if (!TimeSpan.TryParseExact(TimeBox.Text.Trim(), @"hh\:mm", CultureInfo.InvariantCulture, out var start) ||
-            !TimeSpan.TryParseExact(EndTimeBox.Text.Trim(), @"hh\:mm", CultureInfo.InvariantCulture, out var end) || end <= start) return;
+        if (!TryReadMeetingTime(TimeBox.Text, out var start) ||
+            !TryReadMeetingTime(EndTimeBox.Text, out var end) || end <= start) return;
         int duration = (int)(end - start).TotalMinutes;
         updatingTimes = true;
         MeetingDurationBox.SelectedIndex = duration == 30 ? 0 : duration == 60 ? 1 : 2;
@@ -623,15 +888,21 @@ public partial class MainWindow : Window
 
     private void InitializeTimePickers()
     {
+        if (TimeBox == null || EndTimeBox == null) return;
+        var start = TryReadMeetingTime(TimeBox.Text, out var existingStart) ? existingStart : TimeSpan.FromHours(14);
+        var end = TryReadMeetingTime(EndTimeBox.Text, out var existingEnd) ? existingEnd : TimeSpan.FromHours(14.5);
+        updatingTimes = true;
         foreach (var picker in new[] { TimeBox, EndTimeBox })
         {
+            picker.Items.Clear();
             for (int hour = 0; hour < 24; hour++)
                 for (int minute = 0; minute < 60; minute += 15)
-                    picker.Items.Add($"{hour:00}:{minute:00}");
+                    picker.Items.Add(FormatMeetingTime(DateTime.Today.AddHours(hour).AddMinutes(minute)));
         }
-        TimeBox.Text = "14:00";
-        EndTimeBox.Text = "14:30";
+        TimeBox.Text = FormatMeetingTime(DateTime.Today + start);
+        EndTimeBox.Text = FormatMeetingTime(DateTime.Today + end);
         MeetingDurationBox.SelectedIndex = 0;
+        updatingTimes = false;
     }
 
     private void ApplyTheme()
@@ -695,15 +966,68 @@ public partial class MainWindow : Window
         NextMeetingText.Text = next.Original == null
             ? "No upcoming meetings"
             : $"Next: {next.Original.Title} • {next.When:ddd HH:mm} • starts in {Math.Max(0, (int)Math.Ceiling((next.When!.Value - now).TotalMinutes))} min";
-        StatusText.Text = paused ? "Alerts paused" : "Reminders active";
+        if (SidebarReminderStatus != null)
+        {
+            SidebarReminderStatus.Text = IsOnPto(DateTime.Today) ? "On leave" : (paused ? "Paused" : "Active");
+            SidebarReminderStatus.Foreground = new System.Windows.Media.SolidColorBrush(paused ? System.Windows.Media.Colors.Orange : System.Windows.Media.Color.FromRgb(134, 239, 172));
+        }
+        if (SidebarRemindersToggle != null)
+        {
+            syncingReminderToggle = true;
+            SidebarRemindersToggle.IsChecked = !paused;
+            syncingReminderToggle = false;
+        }
         PauseButton.Content = paused ? "Resume alerts" : "Pause alerts";
         MissedText.Text = $"Missed reminders: {missedEntries.Count}";
         if (MissedCentreNavButton != null)
             MissedCentreNavButton.Content = $"Missed Meetings ({missedEntries.Count})";
     }
 
-    private void Pause_Click(object sender, RoutedEventArgs e) { paused = !paused; RefreshStatus(); }
+    private void SidebarReminders_Changed(object sender, RoutedEventArgs e)
+    {
+        if (syncingReminderToggle || !IsLoaded || loadingSettings) return;
+        paused = SidebarRemindersToggle.IsChecked != true;
+        settings.RemindersPaused = paused;
+        PersistSettings();
+        RefreshStatus();
+    }
+
+    private void ToggleReminders()
+    {
+        paused = !paused;
+        settings.RemindersPaused = paused;
+        PersistSettings();
+        RefreshStatus();
+    }
+
+    private void Pause_Click(object sender, RoutedEventArgs e) => ToggleReminders();
+
+    private void ResetCalendar_Click(object sender, RoutedEventArgs e)
+    {
+        if (meetings.Count == 0) { MessageBox.Show("Your calendar is already empty.", "Meeting Buddy"); return; }
+        if (MessageBox.Show($"Delete all {meetings.Count} meetings and recurring series? A backup will be saved first. This cannot be undone from within the app.",
+                "Reset calendar", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
+        try
+        {
+            var backupFolder = Path.Combine(Path.GetDirectoryName(dataPath)!, "Backups");
+            Directory.CreateDirectory(backupFolder);
+            var backup = Path.Combine(backupFolder, $"reset-{DateTime.Now:yyyyMMdd-HHmmss}.json");
+            File.WriteAllText(backup, JsonSerializer.Serialize(meetings.ToArray(), new JsonSerializerOptions { WriteIndented = true }));
+            meetings.Clear();
+            snoozes.Clear();
+            missedEntries.Clear();
+            missedKeys.Clear();
+            alertStages.Clear();
+            Save();
+            RefreshUpcoming();
+            RefreshStatus();
+            MessageBox.Show($"Calendar reset. Backup saved to:\\n{backup}", "Meeting Buddy");
+        }
+        catch (Exception ex) { MessageBox.Show($"Could not reset calendar: {ex.Message}", "Meeting Buddy", MessageBoxButton.OK, MessageBoxImage.Error); }
+    }
     private bool calendarMode;
+    private bool weeklyCalendarMode;
+    private DateTime visibleWeek = DateTime.Today;
     private DateTime visibleMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
 
     private void ListView_Click(object sender, RoutedEventArgs e)
@@ -725,12 +1049,32 @@ public partial class MainWindow : Window
         RefreshOverviewUi();
     }
 
-    private void CalendarPrevious_Click(object sender, RoutedEventArgs e) { visibleMonth = visibleMonth.AddMonths(-1); RenderMonth(); }
-    private void CalendarNext_Click(object sender, RoutedEventArgs e) { visibleMonth = visibleMonth.AddMonths(1); RenderMonth(); }
+    private void CalendarModeToggle_Click(object sender, RoutedEventArgs e)
+    {
+        weeklyCalendarMode = !weeklyCalendarMode;
+        if (weeklyCalendarMode) visibleWeek = DateTime.Today;
+        else visibleMonth = new DateTime(visibleWeek.Year, visibleWeek.Month, 1);
+        CalendarModeToggle.Content = weeklyCalendarMode ? "Month view" : "Week view";
+        RenderMonth();
+    }
+
+    private void CalendarPrevious_Click(object sender, RoutedEventArgs e)
+    {
+        if (weeklyCalendarMode) visibleWeek = visibleWeek.AddDays(-7);
+        else visibleMonth = visibleMonth.AddMonths(-1);
+        RenderMonth();
+    }
+    private void CalendarNext_Click(object sender, RoutedEventArgs e)
+    {
+        if (weeklyCalendarMode) visibleWeek = visibleWeek.AddDays(7);
+        else visibleMonth = visibleMonth.AddMonths(1);
+        RenderMonth();
+    }
 
     private void CalendarToday_Click(object sender, RoutedEventArgs e)
     {
         visibleMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        visibleWeek = DateTime.Today;
         RenderMonth();
     }
 
@@ -769,18 +1113,23 @@ public partial class MainWindow : Window
     private void RenderMonth()
     {
         if (!calendarMode || MonthCells == null) return;
-        CalendarMonthLabel.Text = visibleMonth.ToString("MMMM yyyy", CultureInfo.GetCultureInfo("en-GB"));
+        var anchor = weeklyCalendarMode ? visibleWeek : visibleMonth;
+        var first = anchor.AddDays(-((int)anchor.DayOfWeek + 6) % 7);
+        CalendarMonthLabel.Text = weeklyCalendarMode
+            ? $"{first:dd MMM} – {first.AddDays(6):dd MMM yyyy}"
+            : visibleMonth.ToString("MMMM yyyy", CultureInfo.GetCultureInfo("en-GB"));
+        MonthCells.Rows = weeklyCalendarMode ? 1 : 6;
         MonthCells.Children.Clear();
-        var first = visibleMonth.AddDays(-((int)visibleMonth.DayOfWeek + 6) % 7);
         var textBrush = (System.Windows.Media.Brush)System.Windows.Application.Current.Resources["TextBrush"];
         var muted = (System.Windows.Media.Brush)System.Windows.Application.Current.Resources["MutedBrush"];
         var borderBrush = (System.Windows.Media.Brush)System.Windows.Application.Current.Resources["BorderBrushTheme"];
         var accent = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(37, 99, 235));
-        for (int i = 0; i < 42; i++)
+        for (int i = 0; i < (weeklyCalendarMode ? 7 : 42); i++)
         {
             var day = first.AddDays(i);
-            var currentMonth = day.Month == visibleMonth.Month;
-            var panel = new System.Windows.Controls.StackPanel { Margin = new Thickness(5) };
+            var currentMonth = weeklyCalendarMode || day.Month == visibleMonth.Month;
+            var compact = MonthCells.ActualWidth > 0 && MonthCells.ActualWidth < 780;
+            var panel = new System.Windows.Controls.StackPanel { Margin = new Thickness(compact ? 2 : 5) };
             var dayButton = new System.Windows.Controls.Button
             {
                 Content = day.Day.ToString(CultureInfo.InvariantCulture),
@@ -797,7 +1146,21 @@ public partial class MainWindow : Window
             dayButton.Click += CalendarDay_Click;
             panel.Children.Add(dayButton);
             var occurrences = meetings.Where(m => OccursOn(m, day)).OrderBy(m => m.Start.TimeOfDay).ToList();
-            foreach (var meeting in occurrences.Take(3))
+            if (compact && !weeklyCalendarMode && occurrences.Count > 0)
+            {
+                var countButton = new System.Windows.Controls.Button
+                {
+                    Content = $"{occurrences.Count} meeting{(occurrences.Count == 1 ? "" : "s")}",
+                    Tag = day,
+                    FontSize = 10,
+                    Padding = new Thickness(2),
+                    ToolTip = string.Join("\n", occurrences.Select(m => $"{FormatMeetingTime(day.Date + m.Start.TimeOfDay)}  {m.Title}")),
+                    HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch
+                };
+                countButton.Click += CalendarDay_Click;
+                panel.Children.Add(countButton);
+            }
+            foreach (var meeting in (compact && !weeklyCalendarMode ? Enumerable.Empty<Meeting>() : occurrences.Take(weeklyCalendarMode ? 12 : 3)))
             {
                 var occurrence = new Meeting
                 {
@@ -814,7 +1177,7 @@ public partial class MainWindow : Window
                 };
                 var chip = new System.Windows.Controls.Button
                 {
-                    Content = $"{occurrence.Start:HH:mm}  {occurrence.Title}",
+                    Content = $"{FormatMeetingTime(occurrence.Start)}  {occurrence.Title}",
                     Tag = occurrence,
                     HorizontalContentAlignment = System.Windows.HorizontalAlignment.Left,
                     HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch,
@@ -824,23 +1187,28 @@ public partial class MainWindow : Window
                     Foreground = System.Windows.Media.Brushes.White,
                     BorderThickness = new Thickness(0),
                     FontSize = 11,
-                    ToolTip = $"{occurrence.Title} • {occurrence.Start:HH:mm}–{occurrence.End:HH:mm} • {occurrence.Repeat}"
+                    ToolTip = $"{occurrence.Title} • {FormatMeetingTime(occurrence.Start)}–{FormatMeetingTime(occurrence.End)} • {occurrence.Repeat}"
                 };
                 chip.Click += CalendarMeeting_Click;
                 panel.Children.Add(chip);
             }
-            if (occurrences.Count > 3)
-                panel.Children.Add(new System.Windows.Controls.TextBlock { Text = $"+{occurrences.Count - 3} more", Foreground = muted, Margin = new Thickness(3, 5, 0, 0), FontSize = 11 });
+            if ((!compact || weeklyCalendarMode) && occurrences.Count > (weeklyCalendarMode ? 12 : 3))
+                panel.Children.Add(new System.Windows.Controls.TextBlock { Text = $"+{occurrences.Count - (weeklyCalendarMode ? 12 : 3)} more", Foreground = muted, Margin = new Thickness(3, 5, 0, 0), FontSize = 11 });
             MonthCells.Children.Add(new System.Windows.Controls.Border
             {
                 Child = panel,
                 BorderBrush = borderBrush,
                 BorderThickness = new Thickness(0.5),
                 CornerRadius = new CornerRadius(5),
-                MinHeight = 100,
+                MinHeight = weeklyCalendarMode ? 260 : compact ? 55 : 100,
                 Background = (System.Windows.Media.Brush)System.Windows.Application.Current.Resources["CardBrush"]
             });
         }
+    }
+
+    private void MonthCells_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if ((e.PreviousSize.Width < 780) != (e.NewSize.Width < 780)) RenderMonth();
     }
 
     private void SearchBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
@@ -871,8 +1239,8 @@ public partial class MainWindow : Window
         MeetingDate.SelectedDate = m.Start.Date;
         SelectEventColor(m.EventColor);
         updatingTimes = true;
-        TimeBox.Text = m.Start.ToString("HH:mm");
-        EndTimeBox.Text = m.End.ToString("HH:mm");
+        TimeBox.Text = FormatMeetingTime(m.Start);
+        EndTimeBox.Text = FormatMeetingTime(m.End);
         MeetingDurationBox.SelectedIndex = m.DurationMinutes == 30 ? 0 : m.DurationMinutes == 60 ? 1 : 2;
         updatingTimes = false;
         JoinBox.Text = m.JoinUrl;
@@ -1042,14 +1410,14 @@ public partial class MainWindow : Window
 
     private void Add_Click(object sender, RoutedEventArgs e)
     {
-        if (string.IsNullOrWhiteSpace(TitleBox.Text) || MeetingDate.SelectedDate is null || !TimeSpan.TryParseExact(TimeBox.Text.Trim(), @"hh\:mm", CultureInfo.InvariantCulture, out var time) || time >= TimeSpan.FromDays(1))
+        if (string.IsNullOrWhiteSpace(TitleBox.Text) || MeetingDate.SelectedDate is null || !TryReadMeetingTime(TimeBox.Text, out var time) || time >= TimeSpan.FromDays(1))
         {
-            MessageBox.Show("Enter a title, date, and time in 24-hour HH:mm format.");
+            MessageBox.Show("Enter a title, date, and valid meeting time (e.g. 2:30 PM or 14:30).");
             return;
         }
-        if (!TimeSpan.TryParseExact(EndTimeBox.Text.Trim(), @"hh\:mm", CultureInfo.InvariantCulture, out var endTime) || endTime >= TimeSpan.FromDays(1) || endTime <= time)
+        if (!TryReadMeetingTime(EndTimeBox.Text, out var endTime) || endTime >= TimeSpan.FromDays(1) || endTime <= time)
         {
-            MessageBox.Show("Enter an end time after the start time (HH:mm).");
+            MessageBox.Show("Enter an end time after the start time.");
             return;
         }
         var start = MeetingDate.SelectedDate.Value.Date + time;
@@ -1064,6 +1432,27 @@ public partial class MainWindow : Window
         {
             MessageBox.Show("Select at least one weekday.");
             return;
+        }
+        // Warn about one-off overlaps without silently blocking intentional double bookings.
+        // Recurring series require occurrence expansion and are handled separately.
+        if (repeat == "Once")
+        {
+            var proposedEnd = start.Add(endTime - time);
+            var conflicts = meetings
+                .Where(m => m.Id != editingId && !m.IsRecurring &&
+                            m.Start < proposedEnd && m.End > start)
+                .OrderBy(m => m.Start)
+                .Take(3)
+                .ToList();
+            if (conflicts.Count > 0)
+            {
+                var details = string.Join("\n", conflicts.Select(m =>
+                    $"• {m.Title} ({m.Start:HH:mm}–{m.End:HH:mm})"));
+                var result = MessageBox.Show(
+                    $"This meeting overlaps with an existing meeting:\n\n{details}\n\nSave anyway?",
+                    "Scheduling conflict", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (result != MessageBoxResult.Yes) return;
+            }
         }
         var item = editingId.HasValue ? meetings.FirstOrDefault(x => x.Id == editingId.Value) : null;
         if (item == null) { item = new Meeting(); meetings.Add(item); }
@@ -1101,7 +1490,7 @@ public partial class MainWindow : Window
 
     private void ShowAlert(string title, string message, DateTime meetingStart, string url = "", bool isLive = false, Guid? meetingId = null, string? missedKey = null)
     {
-        if (paused) return;
+        if (paused || IsOnPto(meetingStart)) return;
         var popup = new AlertWindow(
             title,
             message,
@@ -1117,7 +1506,13 @@ public partial class MainWindow : Window
             {
                 var target = DateTime.Now.AddMinutes(snoozeMins);
                 if (target < meetingStart)
+                {
+                    // Keep only the latest snooze for this occurrence; avoid duplicate popups.
+                    snoozes.RemoveAll(s => s.MeetingStart == meetingStart &&
+                        string.Equals(s.Title, title, StringComparison.Ordinal) &&
+                        string.Equals(s.Url, url, StringComparison.Ordinal));
                     snoozes.Add((target, meetingStart, title, url));
+                }
             },
             () =>
             {
@@ -1260,10 +1655,15 @@ public partial class MainWindow : Window
 
     private void CheckMeetings()
     {
+        var stageCountBefore = alertStages.Sum(entry => entry.Value.Count);
         var now = DateTime.Now;
+        // Detect resume after sleep or a suspended UI thread. Missed reminders are
+        // collected by the existing missed-meeting centre rather than replayed as popups.
+        var resumedAfterGap = now - lastReminderCheck > TimeSpan.FromMinutes(2);
+        lastReminderCheck = now;
         var workingDays = settings.WorkingDays ?? new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday };
 
-        if (!paused && settings.DailySummaryEnabled && workingDays.Contains(now.DayOfWeek) &&
+        if (!paused && !IsOnPto(now) && settings.DailySummaryEnabled && workingDays.Contains(now.DayOfWeek) &&
             TimeSpan.TryParseExact(settings.DailySummaryTime, @"hh\:mm", CultureInfo.InvariantCulture, out var summaryTime))
         {
             var todayKey = now.ToString("yyyy-MM-dd");
@@ -1289,7 +1689,7 @@ public partial class MainWindow : Window
             for (var day = now.Date.AddDays(-1); day <= now.Date.AddDays(1); day = day.AddDays(1))
             {
                 if (day < m.Start.Date) continue;
-                if (!workingDays.Contains(day.DayOfWeek)) continue;
+                if (!workingDays.Contains(day.DayOfWeek) || IsOnPto(day)) continue;
                 if (!OccursOn(m, day) || (m.SkippedDates?.Contains(day.ToString("yyyy-MM-dd")) == true)) continue;
 
                 var when = day + m.Start.TimeOfDay;
@@ -1305,7 +1705,7 @@ public partial class MainWindow : Window
                 {
                     var due = when.AddMinutes(-offset);
                     var mKey = $"{key}:{offset}";
-                    if (now >= due && now < due.AddSeconds(75) && stages.Add(offset))
+                    if (!resumedAfterGap && now >= due && now < due.AddSeconds(75) && stages.Add(offset))
                     {
                         bool isLive = offset == 0;
                         ShowAlert(
@@ -1317,7 +1717,7 @@ public partial class MainWindow : Window
                             m.Id,
                             mKey);
                     }
-                    else if (now >= due.AddSeconds(75) && !stages.Contains(offset) && now < m.End)
+                    else if ((now >= due.AddSeconds(75) || (resumedAfterGap && now >= due)) && !stages.Contains(offset) && now < m.End)
                     {
                         stages.Add(offset);
                         if (missedKeys.Add(mKey))
@@ -1336,6 +1736,19 @@ public partial class MainWindow : Window
             }
         }
 
-        if (alertStages.Count > 3000) alertStages.Clear();
+        // Retain recent occurrence state; never clear the entire set and re-alert.
+        if (alertStages.Count > 3000)
+        {
+            var cutoff = now.AddDays(-7);
+            foreach (var key in alertStages.Keys.ToArray())
+            {
+                var separator = key.IndexOf(':');
+                if (separator >= 0 && DateTime.TryParse(key[(separator + 1)..],
+                    CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var occurrence) &&
+                    occurrence < cutoff)
+                    alertStages.Remove(key);
+            }
+        }
+        if (stageCountBefore != alertStages.Sum(entry => entry.Value.Count)) SaveReminderState();
     }
 }
