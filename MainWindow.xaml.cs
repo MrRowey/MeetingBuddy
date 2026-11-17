@@ -1227,6 +1227,27 @@ public partial class MainWindow : Window
             MessageBox.Show("Select at least one weekday.");
             return;
         }
+        // Warn about one-off overlaps without silently blocking intentional double bookings.
+        // Recurring series require occurrence expansion and are handled separately.
+        if (repeat == "Once")
+        {
+            var proposedEnd = start.Add(endTime - time);
+            var conflicts = meetings
+                .Where(m => m.Id != editingId && !m.IsRecurring &&
+                            m.Start < proposedEnd && m.End > start)
+                .OrderBy(m => m.Start)
+                .Take(3)
+                .ToList();
+            if (conflicts.Count > 0)
+            {
+                var details = string.Join("\n", conflicts.Select(m =>
+                    $"• {m.Title} ({m.Start:HH:mm}–{m.End:HH:mm})"));
+                var result = MessageBox.Show(
+                    $"This meeting overlaps with an existing meeting:\n\n{details}\n\nSave anyway?",
+                    "Scheduling conflict", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (result != MessageBoxResult.Yes) return;
+            }
+        }
         var item = editingId.HasValue ? meetings.FirstOrDefault(x => x.Id == editingId.Value) : null;
         if (item == null) { item = new Meeting(); meetings.Add(item); }
         item.Title = TitleBox.Text.Trim();
