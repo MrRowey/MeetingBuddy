@@ -1,0 +1,102 @@
+{
+  "SDKVersion": 2,
+  "Author": "Meeting Buddy",
+  "CodePath": "plugin.html",
+  "Description": "Meeting Buddy v3.3 control & dynamic countdowns for Elgato Stream Deck XL (32 keys).",
+  "Name": "Meeting Buddy",
+  "Icon": "icon",
+  "URL": "http://127.0.0.1:48291",
+  "Version": "3.3.1",
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    }
+  ],
+  "Software": {
+    "MinimumVersion": "6.4"
+  },
+  "Category": "Meeting Buddy",
+  "CategoryIcon": "icon",
+  "Actions": [
+    {
+      "UUID": "com.meetingbuddy.streamdeck.countdown",
+      "Name": "Next Meeting & Countdown",
+      "Icon": "action_countdown",
+      "Tooltip": "Shows next meeting title and live countdown; press to join Zoom.",
+      "States": [
+        {
+          "Image": "action_countdown",
+          "TitleAlignment": "middle",
+          "FontSize": "11"
+        }
+      ]
+    },
+    {
+      "UUID": "com.meetingbuddy.streamdeck.joinnext",
+      "Name": "Join Next Zoom",
+      "Icon": "action_zoom",
+      "Tooltip": "One-touch join for your active or next Zoom meeting.",
+      "States": [
+        {
+          "Image": "action_zoom",
+          "TitleAlignment": "middle",
+          "FontSize": "12"
+        }
+      ]
+    },
+    {
+      "UUID": "com.meetingbuddy.streamdeck.todayslot",
+      "Name": "Today's Meeting Slot",
+      "Icon": "action_slot",
+      "Tooltip": "Displays a meeting from Today's schedule; press to join Zoom.",
+      "PropertyInspectorPath": "pi.html",
+      "States": [
+        {
+          "Image": "action_slot",
+          "TitleAlignment": "middle",
+          "FontSize": "10"
+        }
+      ]
+    },
+    {
+      "UUID": "com.meetingbuddy.streamdeck.quickmeeting",
+      "Name": "Quick Meeting",
+      "Icon": "action_quick",
+      "Tooltip": "Creates an instant ad-hoc meeting starting now.",
+      "States": [
+        {
+          "Image": "action_quick",
+          "TitleAlignment": "middle",
+          "FontSize": "11"
+        }
+      ]
+    },
+    {
+      "UUID": "com.meetingbuddy.streamdeck.togglepause",
+      "Name": "Pause / Resume Alerts",
+      "Icon": "action_pause",
+      "Tooltip": "Toggles Meeting Buddy reminder alerts on or off.",
+      "States": [
+        {
+          "Image": "action_pause",
+          "TitleAlignment": "middle",
+          "FontSize": "11"
+        }
+      ]
+    },
+    {
+      "UUID": "com.meetingbuddy.streamdeck.missed",
+      "Name": "Missed Alerts Indicator",
+      "Icon": "action_missed",
+      "Tooltip": "Shows missed alert count; press to acknowledge all.",
+      "States": [
+        {
+          "Image": "action_missed",
+          "TitleAlignment": "middle",
+          "FontSize": "11"
+        }
+      ]
+    }
+  ]
+}
