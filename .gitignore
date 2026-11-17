@@ -1,0 +1,27 @@
+# .NET / Visual Studio
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.pdb
+
+# Release output
+Release/
+publish/
+*.zip
+
+# Runtime data and diagnostics
+meetingbuddy-error.log
+*.log
+meetings.json
+meetings.json.*
+settings.json
+*.ics
+
+# Local environment
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
