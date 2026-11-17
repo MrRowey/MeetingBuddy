@@ -143,7 +143,6 @@ public partial class MainWindow : Window
 
     private DateTime lastReminderCheck = DateTime.Now;
     private string lastDailySummaryDate = "";
-    private readonly bool needsFirstRunSetup = !File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MeetingBuddy", "settings.json"));
     private AppSettings settings = new();
 
     public MainWindow()
@@ -202,7 +201,7 @@ public partial class MainWindow : Window
         ticker.Start();
         CheckMeetings();
         RefreshUpcoming();
-        if (needsFirstRunSetup && !Environment.GetCommandLineArgs().Any(x => x.Equals("--tray", StringComparison.OrdinalIgnoreCase)))
+        if (!settings.OnboardingCompleted && !Environment.GetCommandLineArgs().Any(x => x.Equals("--tray", StringComparison.OrdinalIgnoreCase)))
             Dispatcher.BeginInvoke(new Action(ShowFirstRunSetup), DispatcherPriority.ApplicationIdle);
     }
 
@@ -634,6 +633,7 @@ public partial class MainWindow : Window
 
     private sealed class AppSettings
     {
+        public bool OnboardingCompleted { get; set; }
         public string ProfileName { get; set; } = "";
         public string ProfileWorkplace { get; set; } = "";
         public string ProfileJobTitle { get; set; } = "";
@@ -722,6 +722,8 @@ public partial class MainWindow : Window
         }
     }
 
+    private void RunSetupAgain_Click(object sender, RoutedEventArgs e) => ShowFirstRunSetup();
+
     private void ShowFirstRunSetup()
     {
         // A lightweight first-launch dialog; existing installations are not interrupted.
@@ -798,11 +800,12 @@ public partial class MainWindow : Window
             PlatformTeamsBox.IsChecked = teams.IsChecked;
             PlatformZoomBox.IsChecked = zoom.IsChecked;
             PlatformMeetBox.IsChecked = meet.IsChecked;
+            settings.OnboardingCompleted = true;
             PersistSettings();
             UpdateWorkspaceHeading();
             dialog.Close();
         };
-        skip.Click += (_, _) => { PersistSettings(); dialog.Close(); };
+        skip.Click += (_, _) => { settings.OnboardingCompleted = true; PersistSettings(); dialog.Close(); };
         dialog.ShowDialog();
     }
 
