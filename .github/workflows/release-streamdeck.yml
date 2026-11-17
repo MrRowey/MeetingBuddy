@@ -1,0 +1,58 @@
+name: Release Stream Deck Plugin
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'StreamDeckPlugin/**'
+      - '.github/workflows/release-streamdeck.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-streamdeck
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Determine next plugin version
+        id: version
+        shell: bash
+        run: |
+          git fetch --tags --force
+          month=$(date -u +%y.%m)
+          prefix="streamdeck-v${month}."
+          patch=$(git tag -l "${prefix}*" | sed -n "s/^streamdeck-v${month//./\.}\.\([0-9][0-9]*\)$/\1/p" | sort -n | tail -1)
+          if [ -z "$patch" ]; then patch=0; else patch=$((patch+1)); fi
+          echo "version=${month}.${patch}" >> "$GITHUB_OUTPUT"
+          echo "tag=streamdeck-v${month}.${patch}" >> "$GITHUB_OUTPUT"
+      - name: Package Stream Deck plugin
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,pathlib
+          path=pathlib.Path('StreamDeckPlugin/com.meetingbuddy.streamdeck.sdPlugin/manifest.json')
+          obj=json.loads(path.read_text(encoding='utf-8'))
+          obj['Version']=os.environ['VERSION']
+          path.write_text(json.dumps(obj,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          PY
+          cd StreamDeckPlugin
+          zip -r "../MeetingBuddy-StreamDeck-${VERSION}.zip" com.meetingbuddy.streamdeck.sdPlugin
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+        shell: bash
+        run: |
+          gh release create "$TAG" "MeetingBuddy-StreamDeck-${VERSION}.zip" --target "$GITHUB_SHA" --title "Meeting Buddy Stream Deck $VERSION" --notes "Stream Deck plugin ZIP. Extract the .sdPlugin folder into the Stream Deck plugins directory. Independently versioned from the Windows application."
