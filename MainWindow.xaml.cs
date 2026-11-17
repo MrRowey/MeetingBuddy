@@ -107,6 +107,7 @@ public partial class MainWindow : Window
     private readonly Dictionary<string, HashSet<int>> alertStages = new();
     private DateTime lastReminderCheck = DateTime.Now;
     private string lastDailySummaryDate = "";
+    private readonly bool needsFirstRunSetup = !File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MeetingBuddy", "settings.json"));
     private AppSettings settings = new();
 
     public MainWindow()
@@ -164,6 +165,8 @@ public partial class MainWindow : Window
         ticker.Start();
         CheckMeetings();
         RefreshUpcoming();
+        if (needsFirstRunSetup && !Environment.GetCommandLineArgs().Any(x => x.Equals("--tray", StringComparison.OrdinalIgnoreCase)))
+            Dispatcher.BeginInvoke(new Action(ShowFirstRunSetup), DispatcherPriority.ApplicationIdle);
     }
 
     private void EventColor_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -671,6 +674,77 @@ public partial class MainWindow : Window
             CustomSoundPathText.Text = $"Custom sound: {picker.FileName}";
             PersistSettings();
         }
+    }
+
+    private void ShowFirstRunSetup()
+    {
+        // A lightweight first-launch dialog; existing installations are not interrupted.
+        var dialog = new Window
+        {
+            Title = "Welcome to Meeting Buddy",
+            Width = 460, Height = 480, MinWidth = 420,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Owner = this, ResizeMode = ResizeMode.NoResize,
+            Background = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(27, 35, 49)),
+            Foreground = System.Windows.Media.Brushes.White,
+            FontFamily = new System.Windows.Media.FontFamily("Segoe UI")
+        };
+        var panel = new System.Windows.Controls.StackPanel { Margin = new Thickness(26) };
+        dialog.Content = panel;
+        panel.Children.Add(new System.Windows.Controls.TextBlock
+        {
+            Text = "Set up your workspace", FontSize = 23, FontWeight = FontWeights.SemiBold,
+            Margin = new Thickness(0, 0, 0, 9)
+        });
+        panel.Children.Add(new System.Windows.Controls.TextBlock
+        {
+            Text = "A few optional details to make Meeting Buddy yours. Everything stays on this PC.",
+            TextWrapping = TextWrapping.Wrap, Foreground = System.Windows.Media.Brushes.LightGray,
+            Margin = new Thickness(0, 0, 0, 20)
+        });
+        System.Windows.Controls.TextBox AddField(string label, string value)
+        {
+            panel.Children.Add(new System.Windows.Controls.TextBlock
+            {
+                Text = label, Margin = new Thickness(0, 0, 0, 5)
+            });
+            var box = new System.Windows.Controls.TextBox
+            {
+                Text = value, Height = 34, MaxLength = 100,
+                Margin = new Thickness(0, 0, 0, 14), Padding = new Thickness(7, 5, 7, 5)
+            };
+            panel.Children.Add(box);
+            return box;
+        }
+        var name = AddField("Your name", settings.ProfileName);
+        var workplace = AddField("Workplace", settings.ProfileWorkplace);
+        var job = AddField("Job title (optional)", settings.ProfileJobTitle);
+        var save = new System.Windows.Controls.Button
+        {
+            Content = "Finish setup", Height = 40, Margin = new Thickness(0, 6, 0, 8),
+            Background = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(37, 99, 235)),
+            Foreground = System.Windows.Media.Brushes.White
+        };
+        panel.Children.Add(save);
+        var skip = new System.Windows.Controls.Button
+        {
+            Content = "Skip for now", Height = 32, Background = System.Windows.Media.Brushes.Transparent,
+            Foreground = System.Windows.Media.Brushes.LightGray
+        };
+        panel.Children.Add(skip);
+        save.Click += (_, _) =>
+        {
+            ProfileNameBox.Text = name.Text.Trim();
+            ProfileWorkplaceBox.Text = workplace.Text.Trim();
+            ProfileJobTitleBox.Text = job.Text.Trim();
+            PersistSettings();
+            UpdateWorkspaceHeading();
+            dialog.Close();
+        };
+        skip.Click += (_, _) => { PersistSettings(); dialog.Close(); };
+        dialog.ShowDialog();
     }
 
     private void UpdateWorkspaceHeading()
