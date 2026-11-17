@@ -804,6 +804,7 @@
          <ComboBoxItem Content="5 min before" Tag="5" Foreground="{DynamicResource TextBrush}"/>
          <ComboBoxItem Content="10 min before" Tag="10" Foreground="{DynamicResource TextBrush}"/>
          <ComboBoxItem Content="15 min before" Tag="15" Foreground="{DynamicResource TextBrush}"/>
+         <ComboBoxItem Content="30 min before" Tag="30" Foreground="{DynamicResource TextBrush}"/>
         </ComboBox>
        </StackPanel>
        <StackPanel Margin="0,2,10,4" Grid.Row="2" Grid.Column="0">
