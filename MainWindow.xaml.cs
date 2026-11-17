@@ -1300,7 +1300,13 @@ public partial class MainWindow : Window
             {
                 var target = DateTime.Now.AddMinutes(snoozeMins);
                 if (target < meetingStart)
+                {
+                    // Keep only the latest snooze for this occurrence; avoid duplicate popups.
+                    snoozes.RemoveAll(s => s.MeetingStart == meetingStart &&
+                        string.Equals(s.Title, title, StringComparison.Ordinal) &&
+                        string.Equals(s.Url, url, StringComparison.Ordinal));
                     snoozes.Add((target, meetingStart, title, url));
+                }
             },
             () =>
             {
