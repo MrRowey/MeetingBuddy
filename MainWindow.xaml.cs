@@ -70,6 +70,39 @@ public partial class MainWindow : Window
     private string searchQuery = "";
     private bool paused;
     private bool syncingReminderToggle;
+    private sealed class PtoPeriod
+    {
+        public DateTime Start { get; set; }
+        public DateTime End { get; set; }
+        public override string ToString() => $"{Start:dd MMM yyyy} – {End:dd MMM yyyy}";
+    }
+    private bool IsOnPto(DateTime date) => settings.TimeOff?.Any(p => date.Date >= p.Start.Date && date.Date <= p.End.Date) == true;
+    private void RefreshPtoList()
+    {
+        if (PtoList == null) return;
+        PtoList.ItemsSource = null;
+        PtoList.ItemsSource = settings.TimeOff;
+    }
+    private void AddPto_Click(object sender, RoutedEventArgs e)
+    {
+        if (PtoStartDate.SelectedDate is not DateTime start || PtoEndDate.SelectedDate is not DateTime end || end.Date < start.Date)
+        {
+            MessageBox.Show("Choose a valid start and end date.", "Time Off"); return;
+        }
+        settings.TimeOff ??= new();
+        settings.TimeOff.Add(new PtoPeriod { Start = start.Date, End = end.Date });
+        PersistSettings();
+        RefreshPtoList();
+        RefreshStatus();
+    }
+    private void RemovePto_Click(object sender, RoutedEventArgs e)
+    {
+        if (PtoList.SelectedItem is not PtoPeriod selected) return;
+        settings.TimeOff?.Remove(selected);
+        PersistSettings();
+        RefreshPtoList();
+        RefreshStatus();
+    }
     private readonly HashSet<string> missedKeys = new();
     private readonly Dictionary<string, HashSet<int>> alertStages = new();
     private string lastDailySummaryDate = "";
@@ -86,6 +119,9 @@ public partial class MainWindow : Window
         UpdateSidebarSelection();
         SizeChanged += (_, _) => UpdateResponsiveLayout();
         LoadSettings();
+        PtoStartDate.SelectedDate = DateTime.Today;
+        PtoEndDate.SelectedDate = DateTime.Today;
+        RefreshPtoList();
         paused = settings.RemindersPaused;
         MainTabs.SelectedIndex = 0;
         UpdateSidebarSelection();
@@ -541,6 +577,7 @@ public partial class MainWindow : Window
         public List<DayOfWeek> WorkingDays { get; set; } = new() { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday };
         public bool StreamDeckEnabled { get; set; } = false;
         public bool RemindersPaused { get; set; } = false;
+        public List<PtoPeriod> TimeOff { get; set; } = new();
         public int StreamDeckPort { get; set; } = 48291;
     }
 
@@ -735,7 +772,7 @@ public partial class MainWindow : Window
         if (StatusText != null) StatusText.Text = paused ? "Paused" : "Active";
         if (SidebarReminderStatus != null)
         {
-            SidebarReminderStatus.Text = paused ? "Paused" : "Active";
+            SidebarReminderStatus.Text = IsOnPto(DateTime.Today) ? "On leave" : (paused ? "Paused" : "Active");
             SidebarReminderStatus.Foreground = new System.Windows.Media.SolidColorBrush(paused ? System.Windows.Media.Colors.Orange : System.Windows.Media.Color.FromRgb(134, 239, 172));
         }
         if (SidebarRemindersToggle != null)
@@ -1210,7 +1247,7 @@ public partial class MainWindow : Window
 
     private void ShowAlert(string title, string message, DateTime meetingStart, string url = "", bool isLive = false, Guid? meetingId = null, string? missedKey = null)
     {
-        if (paused) return;
+        if (paused || IsOnPto(meetingStart)) return;
         var popup = new AlertWindow(
             title,
             message,
@@ -1372,7 +1409,7 @@ public partial class MainWindow : Window
         var now = DateTime.Now;
         var workingDays = settings.WorkingDays ?? new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday };
 
-        if (!paused && settings.DailySummaryEnabled && workingDays.Contains(now.DayOfWeek) &&
+        if (!paused && !IsOnPto(now) && settings.DailySummaryEnabled && workingDays.Contains(now.DayOfWeek) &&
             TimeSpan.TryParseExact(settings.DailySummaryTime, @"hh\:mm", CultureInfo.InvariantCulture, out var summaryTime))
         {
             var todayKey = now.ToString("yyyy-MM-dd");
@@ -1398,7 +1435,7 @@ public partial class MainWindow : Window
             for (var day = now.Date.AddDays(-1); day <= now.Date.AddDays(1); day = day.AddDays(1))
             {
                 if (day < m.Start.Date) continue;
-                if (!workingDays.Contains(day.DayOfWeek)) continue;
+                if (!workingDays.Contains(day.DayOfWeek) || IsOnPto(day)) continue;
                 if (!OccursOn(m, day) || (m.SkippedDates?.Contains(day.ToString("yyyy-MM-dd")) == true)) continue;
 
                 var when = day + m.Start.TimeOfDay;
