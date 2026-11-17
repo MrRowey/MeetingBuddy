@@ -48,6 +48,14 @@ public partial class AlertWindow : Window
 
         bool hasLink = Uri.TryCreate(url, UriKind.Absolute, out var uri) && (uri.Scheme == "https" || uri.Scheme == "http");
         JoinButton.Visibility = hasLink ? Visibility.Visible : Visibility.Collapsed;
+        if (hasLink)
+        {
+            var host = uri!.Host.ToLowerInvariant();
+            JoinButton.Content = host == "teams.microsoft.com" || host.EndsWith(".teams.microsoft.com", StringComparison.Ordinal) ? "Join Teams"
+                : host == "meet.google.com" ? "Join Google Meet"
+                : host == "zoom.us" || host.EndsWith(".zoom.us", StringComparison.Ordinal) ? "Join Zoom"
+                : "Join meeting";
+        }
 
         int minutesUntilStart = (int)Math.Floor((meetingStart - DateTime.Now).TotalMinutes);
         if (!isLiveMeeting && minutesUntilStart >= 1 && onSnooze != null)
