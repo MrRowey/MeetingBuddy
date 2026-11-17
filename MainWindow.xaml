@@ -493,6 +493,21 @@
 
        <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="16" Margin="0,0,0,10"><StackPanel><TextBlock Text="Calendar &amp; Data" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/><TextBlock Text="Import meetings from an ICS calendar export." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,14"/><StackPanel Orientation="Horizontal"><Button Content="Import ICS calendar" Click="ImportIcs_Click" HorizontalAlignment="Left" Padding="14,9"/><Button Content="Reset calendar…" Click="ResetCalendar_Click" Padding="14,9" Margin="8,0,0,0"/></StackPanel></StackPanel></Border>
 
+        <!-- Time off: notification suppression -->
+        <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="16" Margin="0,0,0,10">
+         <StackPanel>
+          <TextBlock Text="Time Off &amp; Availability" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+          <TextBlock Text="Suppress meeting reminders and missed alerts during annual leave." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,12"/>
+          <Grid Margin="0,0,0,10"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+           <StackPanel Margin="0,0,8,0"><TextBlock Text="FROM" Foreground="{DynamicResource MutedBrush}"/><DatePicker x:Name="PtoStartDate" SelectedDateFormat="Short"/></StackPanel>
+           <StackPanel Grid.Column="1" Margin="8,0,0,0"><TextBlock Text="THROUGH" Foreground="{DynamicResource MutedBrush}"/><DatePicker x:Name="PtoEndDate" SelectedDateFormat="Short"/></StackPanel>
+          </Grid>
+          <Button Content="+ Add time off" Click="AddPto_Click" HorizontalAlignment="Left"/>
+          <ListBox x:Name="PtoList" Margin="0,8,0,4" MaxHeight="110" Background="Transparent" Foreground="{DynamicResource TextBrush}"/>
+          <Button Content="Remove selected time off" Click="RemovePto_Click" HorizontalAlignment="Left"/>
+         </StackPanel>
+        </Border>
+
         <!-- Reminders, Position & Custom Sound -->
        <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="16" Margin="0,0,0,10">
         <StackPanel>
