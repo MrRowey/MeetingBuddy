@@ -1,0 +1,59 @@
+name: Release Windows App
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**/*.cs'
+      - '**/*.xaml'
+      - '**/*.csproj'
+      - 'Assets/**'
+      - 'BuildRelease.ps1'
+      - '.github/workflows/release-windows.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-windows
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Determine next app version
+        id: version
+        shell: pwsh
+        run: |
+          git fetch --tags --force
+          $prefix = 'app-v' + (Get-Date -Format 'yy.MM') + '.'
+          $numbers = @(git tag -l "$prefix*" | ForEach-Object {
+            if ($_ -match ('^' + [regex]::Escape($prefix) + '(\d+)$')) { [int]$Matches[1] }
+          })
+          $patch = if ($numbers.Count) { ($numbers | Measure-Object -Maximum).Maximum + 1 } else { 0 }
+          $version = (Get-Date -Format 'yy.MM') + ".$patch"
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "tag=app-v$version" >> $env:GITHUB_OUTPUT
+      - name: Publish Windows application
+        shell: pwsh
+        run: |
+          dotnet publish ./MeetingBuddy.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false -o ./publish
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path ./publish/MeetingBuddy.exe)) { throw 'MeetingBuddy.exe missing' }
+          Compress-Archive -Path ./publish/* -DestinationPath "./MeetingBuddy-Windows-${{ steps.version.outputs.version }}.zip" -Force
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+        shell: pwsh
+        run: |
+          gh release create "$env:TAG" "./MeetingBuddy-Windows-$env:VERSION.zip" --target "$env:GITHUB_SHA" --title "Meeting Buddy Windows $env:VERSION" --notes "Windows x64 self-contained release. Stream Deck plugin is versioned and distributed separately."
