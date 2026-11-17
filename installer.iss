@@ -14,7 +14,6 @@ SolidCompression=yes
 PrivilegesRequired=lowest
 CloseApplications=yes
 RestartApplications=no
-AppMutex=MeetingBuddySingleInstance
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 UninstallDisplayIcon={app}\{#MyAppExeName}
