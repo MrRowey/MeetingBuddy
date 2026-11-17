@@ -175,6 +175,15 @@ public partial class MainWindow : Window
 
     private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
+        if (System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.Control &&
+            e.Key == System.Windows.Input.Key.N &&
+            MeetingDialogOverlay.Visibility != Visibility.Visible &&
+            MeetingDetailsOverlay.Visibility != Visibility.Visible)
+        {
+            OpenMeetingDialog();
+            e.Handled = true;
+            return;
+        }
         if (e.Key != System.Windows.Input.Key.Escape) return;
         if (DailySummaryOverlay.Visibility == Visibility.Visible)
         {
