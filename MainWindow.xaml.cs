@@ -1545,7 +1545,7 @@ public partial class MainWindow : Window
             var cutoff = now.AddDays(-7);
             foreach (var key in alertStages.Keys.ToArray())
             {
-                var separator = key.LastIndexOf(':');
+                var separator = key.IndexOf(':');
                 if (separator >= 0 && DateTime.TryParse(key[(separator + 1)..],
                     CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var occurrence) &&
                     occurrence < cutoff)
