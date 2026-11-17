@@ -81,8 +81,8 @@ public partial class AlertWindow : Window
         {
             bright = !bright;
             Frame.BorderBrush = new SolidColorBrush(bright
-                ? System.Windows.Media.Color.FromRgb(220, 38, 38)
-                : System.Windows.Media.Color.FromRgb(255, 190, 65));
+                ? System.Windows.Media.Color.FromRgb(37, 99, 235)
+                : System.Windows.Media.Color.FromRgb(96, 165, 250));
         };
         if (flashing) flash.Start();
         Closed += (_, _) => flash.Stop();
@@ -99,7 +99,15 @@ public partial class AlertWindow : Window
 
     private void PositionWindow()
     {
-        var workArea = SystemParameters.WorkArea;
+        // Use the monitor containing the pointer when the alert appears.
+        // Convert physical monitor pixels to WPF device-independent units.
+        var screen = System.Windows.Forms.Screen.FromPoint(System.Windows.Forms.Cursor.Position);
+        var area = screen.WorkingArea;
+        var source = System.Windows.PresentationSource.FromVisual(this);
+        var transform = source?.CompositionTarget?.TransformFromDevice ?? System.Windows.Media.Matrix.Identity;
+        var topLeft = transform.Transform(new System.Windows.Point(area.Left, area.Top));
+        var bottomRight = transform.Transform(new System.Windows.Point(area.Right, area.Bottom));
+        var workArea = new Rect(topLeft, bottomRight);
         const double margin = 20;
         switch (positionMode)
         {
