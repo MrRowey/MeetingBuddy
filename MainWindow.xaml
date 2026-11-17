@@ -216,8 +216,12 @@
      <Button Content="☷  Daily Summary" Style="{StaticResource SidebarNavStyle}" Click="ShowDailySummary_Click"/>
     </StackPanel>
     <StackPanel Grid.Row="2">
+     <Grid Margin="4,0,4,10"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+      <StackPanel><TextBlock Text="Reminders" Foreground="#D6E3F5" FontSize="12"/><TextBlock x:Name="SidebarReminderStatus" Text="Active" Foreground="#86EFAC" FontSize="11"/></StackPanel>
+      <CheckBox x:Name="SidebarRemindersToggle" Grid.Column="1" IsChecked="True" VerticalAlignment="Center" ToolTip="Pause or resume notifications" Checked="SidebarReminders_Changed" Unchecked="SidebarReminders_Changed"/>
+     </Grid>
      <Border Height="1" Background="#334155" Margin="5,0,5,12"/>
-     <Button x:Name="PreferencesNavButton" Style="{StaticResource SidebarNavStyle}" Content="⚙  Preferences" Click="NavigatePreferences_Click" ToolTip="Application settings"/>
+     <Button x:Name="PreferencesNavButton" Style="{StaticResource SidebarNavStyle}" Content="⚙  Settings" Click="NavigatePreferences_Click" ToolTip="Application settings"/>
     </StackPanel>
    </Grid>
   </Border>
@@ -239,12 +243,7 @@
      <TextBlock Text="Your workspace" FontSize="28" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold"/>
      <TextBlock Text="Stay on schedule. Keep your day moving." FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0"/>
     </StackPanel>
-    <Border Background="#E7F6EF" CornerRadius="18" Padding="14,9" VerticalAlignment="Center" Grid.Column="1">
-     <StackPanel Orientation="Horizontal">
-      <TextBlock Text="●  " FontSize="12" Foreground="#15804B" FontWeight="Bold"/>
-      <TextBlock x:Name="StatusText" Text="Reminders active" Foreground="#176A43" FontWeight="SemiBold" FontSize="12"/>
-     </StackPanel>
-    </Border>
+    
    </Grid>
 
    <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0" x:Name="MainTabs" Margin="0" Padding="0">
@@ -465,16 +464,16 @@
     </TabItem>
 
     <!-- TAB 2: PREFERENCES -->
-    <TabItem Header="Preferences" FontSize="14" Padding="15,9" Foreground="{DynamicResource TextBrush}">
+    <TabItem Header="Settings" FontSize="14" Padding="15,9" Foreground="{DynamicResource TextBrush}">
      <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
       <StackPanel Margin="0,0,12,12">
-       <TextBlock Text="Preferences" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,5"/>
+       <TextBlock Text="Settings" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,5"/>
        <TextBlock Text="Personalise your workspace, working hours, and persistent reminders." Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,22"/>
 
        <!-- Appearance & Dashboard -->
-       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="14" Padding="22" Margin="0,0,0,16">
+       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="16" Margin="0,0,0,10">
         <StackPanel>
-         <TextBlock Text="Appearance &amp; Dashboard" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+         <TextBlock Text="Appearance" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
          <TextBlock Text="Choose how Meeting Buddy looks and which dashboard widgets appear." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,18" TextWrapping="Wrap"/>
          <Grid Margin="0,0,0,14">
           <Grid.ColumnDefinitions>
@@ -492,12 +491,12 @@
         </StackPanel>
        </Border>
 
-       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="14" Padding="22" Margin="0,0,0,16"><StackPanel><TextBlock Text="Calendar import" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/><TextBlock Text="Import meetings from an ICS calendar export." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,14"/><Button Content="Import ICS calendar" Click="ImportIcs_Click" HorizontalAlignment="Left" Padding="14,9"/></StackPanel></Border>
+       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="16" Margin="0,0,0,10"><StackPanel><TextBlock Text="Calendar &amp; Data" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/><TextBlock Text="Import meetings from an ICS calendar export." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,14"/><StackPanel Orientation="Horizontal"><Button Content="Import ICS calendar" Click="ImportIcs_Click" HorizontalAlignment="Left" Padding="14,9"/><Button Content="Reset calendar…" Click="ResetCalendar_Click" Padding="14,9" Margin="8,0,0,0"/></StackPanel></StackPanel></Border>
 
         <!-- Reminders, Position & Custom Sound -->
-       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="14" Padding="22" Margin="0,0,0,16">
+       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="16" Margin="0,0,0,10">
         <StackPanel>
-         <TextBlock Text="Reminders &amp; Alert Appearance" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+         <TextBlock Text="Notifications &amp; Reminders" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
          <TextBlock Text="Live meeting alerts stay visible until Join Zoom or Acknowledge is clicked." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,18" TextWrapping="Wrap"/>
          <CheckBox Content="Play a sound with reminders" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,14" x:Name="SoundBox"/>
          <CheckBox Content="Flash the alert window border" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,18" x:Name="FlashBox"/>
@@ -554,9 +553,9 @@
        </Border>
 
        <!-- Working Hours & Working Days -->
-       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="14" Padding="22" Margin="0,0,0,16">
+       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="16" Margin="0,0,0,10">
         <StackPanel>
-         <TextBlock Text="Working Hours &amp; Days" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+         <TextBlock Text="Work Schedule" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
          <TextBlock Text="Used for ICS import filtering and active reminder scheduling." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,16" TextWrapping="Wrap"/>
          <Grid Margin="0,0,0,14">
           <Grid.ColumnDefinitions>
@@ -583,9 +582,9 @@
        </Border>
 
               <!-- Stream Deck XL Integration -->
-       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="14" Padding="22" Margin="0,0,0,16">
+       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="16" Margin="0,0,0,10">
         <StackPanel>
-         <TextBlock Text="Elgato Stream Deck XL Integration" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+         <TextBlock Text="Integrations · Stream Deck" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
          <TextBlock Text="Local bridge API for 32-key (8×4) Stream Deck actions, live countdowns, and one-touch Zoom join." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,16" TextWrapping="Wrap"/>
          <CheckBox Content="Enable local Stream Deck bridge API (127.0.0.1)" IsChecked="False" Checked="Settings_Changed" Unchecked="Settings_Changed" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,14" x:Name="StreamDeckEnabledBox"/>
          <Grid Margin="0,0,0,14">
@@ -608,9 +607,9 @@
        </Border>
 
        <!-- Startup & Testing -->
-       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="14" Padding="22" Margin="0,0,0,16">
+       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="16" Margin="0,0,0,10">
         <StackPanel>
-         <TextBlock Text="Startup and diagnostics" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+         <TextBlock Text="Startup &amp; Diagnostics" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
          <TextBlock Text="Keep reminders running while you work." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,18" TextWrapping="Wrap"/>
          <CheckBox Content="Start with Windows (minimised to tray)" Checked="Startup_Changed" Unchecked="Startup_Changed" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,16" x:Name="StartWithWindows"/>
          <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
@@ -630,7 +629,7 @@
 
   <!-- OVERLAY 1: ADD / EDIT MEETING DIALOG -->
   <Grid x:Name="MeetingDialogOverlay" Grid.ColumnSpan="2" Panel.ZIndex="50" Visibility="Collapsed" Background="#B9000000">
-   <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="16,20" VerticalAlignment="Center" MaxHeight="740">
+   <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="16,20" VerticalAlignment="Center" MaxHeight="740" Width="720">
     <Border x:Name="EditorCard" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="16" Padding="28" Margin="0" VerticalAlignment="Stretch" MaxWidth="690" HorizontalAlignment="Center" Width="690">
      <StackPanel>
       <Button Content="✕  Close" Click="CloseMeetingDialog_Click" HorizontalAlignment="Right" Margin="0,0,0,10" Background="{DynamicResource SubtleBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrushTheme}"/>
@@ -649,12 +648,12 @@
       <StackPanel Margin="0,0,0,16">
        <TextBlock Text="EVENT COLOUR" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,7"/>
        <ComboBox x:Name="EventColorBox" Height="40" Width="280" HorizontalAlignment="Left" Foreground="{DynamicResource InputTextBrush}" Background="{DynamicResource InputBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" SelectedIndex="0">
-        <ComboBoxItem Content="🔵  Blue · General" Tag="#2563EB"/>
-        <ComboBoxItem Content="🟢  Green · Team" Tag="#059669"/>
-        <ComboBoxItem Content="🟣  Purple · Projects" Tag="#7C3AED"/>
-        <ComboBoxItem Content="🟠  Orange · Important" Tag="#C76A13"/>
-        <ComboBoxItem Content="🔴  Red · Urgent" Tag="#C2414B"/>
-        <ComboBoxItem Content="🩵  Teal · Customers" Tag="#087E8B"/>
+        <ComboBoxItem Content="●  Blue · General" Tag="#2563EB"/>
+        <ComboBoxItem Content="●  Green · Team" Tag="#059669"/>
+        <ComboBoxItem Content="●  Purple · Projects" Tag="#7C3AED"/>
+        <ComboBoxItem Content="●  Orange · Important" Tag="#C76A13"/>
+        <ComboBoxItem Content="●  Red · Urgent" Tag="#C2414B"/>
+        <ComboBoxItem Content="●  Teal · Customers" Tag="#087E8B"/>
        </ComboBox>
       </StackPanel>
 
@@ -702,20 +701,13 @@
          <ComboBoxItem Content="15 min before" Tag="15" Foreground="{DynamicResource TextBrush}"/>
         </ComboBox>
        </StackPanel>
-       <StackPanel Margin="0,2,0,4" Grid.Row="2" Grid.ColumnSpan="2">
+       <StackPanel Margin="0,2,10,4" Grid.Row="2" Grid.Column="0">
         <TextBlock Text="REPEAT" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,8"/>
         <CheckBox x:Name="RepeatEnabledBox" Content="Repeat this meeting" IsChecked="False" VerticalAlignment="Center" Margin="0" Checked="RepeatEnabled_Changed" Unchecked="RepeatEnabled_Changed" Foreground="{DynamicResource TextBrush}" MinHeight="32" Style="{StaticResource MeetingToggleStyle}"/>
        </StackPanel>
-      </Grid>
-
-      <StackPanel Margin="0,0,0,8" HorizontalAlignment="Left" Width="300">
-       <TextBlock Text="END TIME" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,7"/>
-       <ComboBox x:Name="EndTimeBox" Width="300" Height="40" IsEditable="True" IsTextSearchEnabled="True" StaysOpenOnEdit="True" SelectionChanged="EndTime_Changed" LostKeyboardFocus="EndTime_LostFocus" ToolTip="Choose or type an exact end time (HH:mm)" Foreground="{DynamicResource InputTextBrush}" Background="{DynamicResource InputBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" HorizontalAlignment="Stretch"/>
-      </StackPanel>
-
-      <StackPanel x:Name="RecurrencePanel" Visibility="Collapsed" Margin="0,12,0,0">
+      <StackPanel x:Name="RecurrencePanel" Visibility="Collapsed" Margin="10,2,0,4" Grid.Row="2" Grid.Column="1">
        <TextBlock Text="REPEAT FREQUENCY" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>
-       <ComboBox x:Name="RepeatBox" Width="220" HorizontalAlignment="Left" Height="37" SelectedIndex="1" Foreground="{DynamicResource InputTextBrush}" Background="{DynamicResource InputBrush}" BorderBrush="{DynamicResource BorderBrushTheme}">
+       <ComboBox x:Name="RepeatBox" HorizontalAlignment="Stretch" Height="37" SelectedIndex="1" Foreground="{DynamicResource InputTextBrush}" Background="{DynamicResource InputBrush}" BorderBrush="{DynamicResource BorderBrushTheme}">
         <ComboBoxItem Content="Daily" Foreground="{DynamicResource TextBrush}"/>
         <ComboBoxItem Content="Weekly" Foreground="{DynamicResource TextBrush}"/>
         <ComboBoxItem Content="Every 2 weeks" Foreground="{DynamicResource TextBrush}"/>
@@ -723,7 +715,15 @@
        </ComboBox>
       </StackPanel>
 
-      <StackPanel x:Name="WeekdayPanel" Visibility="Collapsed" Margin="0,12,0,0">
+      
+      </Grid>
+
+      <StackPanel Margin="0,0,0,8" HorizontalAlignment="Left" Width="300">
+       <TextBlock Text="END TIME" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,7"/>
+       <ComboBox x:Name="EndTimeBox" Width="300" Height="40" IsEditable="True" IsTextSearchEnabled="True" StaysOpenOnEdit="True" SelectionChanged="EndTime_Changed" LostKeyboardFocus="EndTime_LostFocus" ToolTip="Choose or type an exact end time (HH:mm)" Foreground="{DynamicResource InputTextBrush}" Background="{DynamicResource InputBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" HorizontalAlignment="Stretch"/>
+      </StackPanel>
+
+<StackPanel x:Name="WeekdayPanel" Visibility="Collapsed" Margin="0,12,0,0">
        <TextBlock Text="REPEAT ON" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>
        <WrapPanel>
         <CheckBox x:Name="MonBox" Content="Mon" IsChecked="True" Margin="0,0,14,0" Foreground="{DynamicResource TextBrush}"/>
