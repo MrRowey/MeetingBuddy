@@ -1,0 +1,874 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="MeetingBuddy.MainWindow" Title="Meeting Buddy" Width="1180" Height="830" MinWidth="980" MinHeight="680" Background="{DynamicResource PageBrush}" Foreground="{DynamicResource TextBrush}" FontFamily="Segoe UI Variable, Segoe UI" WindowStartupLocation="CenterScreen" UseLayoutRounding="True" PreviewKeyDown="Window_PreviewKeyDown">
+ <Window.Resources>
+  <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+  <Style TargetType="Button">
+   <Setter Property="Padding" Value="15,9"/>
+   <Setter Property="Margin" Value="0,0,8,0"/>
+   <Setter Property="MinHeight" Value="36"/>
+   <Setter Property="FontSize" Value="13"/>
+   <Setter Property="FontWeight" Value="SemiBold"/>
+   <Setter Property="Background" Value="{DynamicResource SubtleBrush}"/>
+   <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+   <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushTheme}"/>
+   <Setter Property="BorderThickness" Value="1"/>
+   <Setter Property="Cursor" Value="Hand"/>
+  </Style>
+  <Style TargetType="TextBox">
+   <Setter Property="Padding" Value="10,8"/>
+   <Setter Property="FontSize" Value="13"/>
+   <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushTheme}"/>
+   <Setter Property="BorderThickness" Value="1"/>
+   <Setter Property="Background" Value="{DynamicResource InputBrush}"/>
+   <Setter Property="Foreground" Value="{DynamicResource InputTextBrush}"/>
+   <Setter Property="MinHeight" Value="38"/>
+   <Setter Property="VerticalContentAlignment" Value="Center"/>
+  </Style>
+  <Style TargetType="DatePicker">
+   <Setter Property="Foreground" Value="{DynamicResource InputTextBrush}"/>
+   <Setter Property="Background" Value="{DynamicResource InputBrush}"/>
+   <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushTheme}"/>
+   <Setter Property="FontSize" Value="13"/>
+   <Setter Property="Padding" Value="5"/>
+  </Style>
+  <Style TargetType="ComboBox">
+   <Setter Property="MinHeight" Value="38"/>
+   <Setter Property="Padding" Value="12,8"/>
+   <Setter Property="FontSize" Value="13"/>
+   <Setter Property="Background" Value="{DynamicResource InputBrush}"/>
+   <Setter Property="Foreground" Value="{DynamicResource InputTextBrush}"/>
+   <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushTheme}"/>
+   <Setter Property="BorderThickness" Value="1"/>
+   <Setter Property="VerticalContentAlignment" Value="Center"/>
+   <Setter Property="Template">
+    <Setter.Value>
+     <ControlTemplate TargetType="ComboBox">
+      <Grid SnapsToDevicePixels="True">
+       <Border x:Name="Outer" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="9"/>
+       <Grid>
+        <Grid.ColumnDefinitions>
+         <ColumnDefinition Width="*"/>
+         <ColumnDefinition Width="36"/>
+        </Grid.ColumnDefinitions>
+        <ContentPresenter x:Name="SelectionPresenter" Grid.Column="0" Margin="12,0,2,0" VerticalAlignment="Center" HorizontalAlignment="Left" IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"/>
+        <TextBox x:Name="PART_EditableTextBox" Grid.Column="0" Margin="5,3,0,3" Padding="7,0" Background="Transparent" Foreground="{TemplateBinding Foreground}" BorderThickness="0" VerticalContentAlignment="Center" Visibility="Hidden" Focusable="True" IsReadOnly="{TemplateBinding IsReadOnly}"/>
+        <ToggleButton x:Name="DropButton" Grid.Column="1" Background="Transparent" BorderThickness="0" Focusable="False" ClickMode="Press" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+         <ToggleButton.Template>
+          <ControlTemplate TargetType="ToggleButton">
+           <Border Background="Transparent" CornerRadius="0,9,9,0">
+            <Path Width="10" Height="6" Stretch="Fill" Stroke="{DynamicResource InputTextBrush}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Data="M 1 1 L 5 5 L 9 1" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+           </Border>
+          </ControlTemplate>
+         </ToggleButton.Template>
+        </ToggleButton>
+       </Grid>
+       <Popup x:Name="PART_Popup" Placement="Bottom" AllowsTransparency="True" Focusable="False" IsOpen="{TemplateBinding IsDropDownOpen}" PopupAnimation="Fade">
+        <Grid MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}" MaxHeight="320">
+         <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="9" Margin="0,4,0,3" Padding="4">
+          <ScrollViewer x:Name="DropDownScrollViewer" CanContentScroll="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+           <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/>
+          </ScrollViewer>
+         </Border>
+        </Grid>
+       </Popup>
+      </Grid>
+      <ControlTemplate.Triggers>
+       <Trigger Property="IsEditable" Value="True">
+        <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible"/>
+        <Setter TargetName="SelectionPresenter" Property="Visibility" Value="Hidden"/>
+       </Trigger>
+       <Trigger Property="IsMouseOver" Value="True">
+        <Setter TargetName="Outer" Property="BorderBrush" Value="{DynamicResource AccentTextBrush}"/>
+       </Trigger>
+       <Trigger Property="IsKeyboardFocusWithin" Value="True">
+        <Setter TargetName="Outer" Property="BorderBrush" Value="{DynamicResource AccentTextBrush}"/>
+        <Setter TargetName="Outer" Property="BorderThickness" Value="2"/>
+       </Trigger>
+       <Trigger Property="IsEnabled" Value="False">
+        <Setter TargetName="Outer" Property="Opacity" Value="0.55"/>
+       </Trigger>
+      </ControlTemplate.Triggers>
+     </ControlTemplate>
+    </Setter.Value>
+   </Setter>
+  </Style>
+  <Style TargetType="ComboBoxItem">
+   <Setter Property="Foreground" Value="{DynamicResource InputTextBrush}"/>
+   <Setter Property="Background" Value="Transparent"/>
+   <Setter Property="FontSize" Value="13"/>
+   <Setter Property="Padding" Value="12,9"/>
+   <Setter Property="MinHeight" Value="34"/>
+   <Setter Property="Template">
+    <Setter.Value>
+     <ControlTemplate TargetType="ComboBoxItem">
+      <Border x:Name="ItemBorder" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+       <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Left"/>
+      </Border>
+      <ControlTemplate.Triggers>
+       <Trigger Property="IsHighlighted" Value="True">
+        <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource SubtleBrush}"/>
+       </Trigger>
+       <Trigger Property="IsSelected" Value="True">
+        <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource NavActiveBrush}"/>
+        <Setter Property="Foreground" Value="White"/>
+       </Trigger>
+       <Trigger Property="IsEnabled" Value="False">
+        <Setter Property="Opacity" Value="0.5"/>
+       </Trigger>
+      </ControlTemplate.Triggers>
+     </ControlTemplate>
+    </Setter.Value>
+   </Setter>
+  </Style>
+  <Style TargetType="Calendar">
+   <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+   <Setter Property="Foreground" Value="{DynamicResource InputTextBrush}"/>
+   <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushTheme}"/>
+  </Style>
+  <Style x:Key="MeetingDateTextStyle" TargetType="{x:Type DatePickerTextBox}">
+   <Setter Property="Background" Value="{DynamicResource InputBrush}"/>
+   <Setter Property="Foreground" Value="{DynamicResource InputTextBrush}"/>
+   <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushTheme}"/>
+   <Setter Property="BorderThickness" Value="0"/>
+   <Setter Property="Padding" Value="12,7"/>
+   <Setter Property="FontSize" Value="13"/>
+   <Setter Property="VerticalContentAlignment" Value="Center"/>
+   <Setter Property="Template">
+    <Setter.Value>
+     <ControlTemplate TargetType="{x:Type DatePickerTextBox}">
+      <Border Background="{TemplateBinding Background}" CornerRadius="8" SnapsToDevicePixels="True">
+       <ScrollViewer x:Name="PART_ContentHost" Margin="0" VerticalAlignment="Center"/>
+      </Border>
+     </ControlTemplate>
+    </Setter.Value>
+   </Setter>
+  </Style>
+  <Style x:Key="MeetingToggleStyle" TargetType="{x:Type CheckBox}">
+   <Setter Property="Cursor" Value="Hand"/>
+   <Setter Property="Template">
+    <Setter.Value>
+     <ControlTemplate TargetType="{x:Type CheckBox}">
+      <Grid>
+       <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="48"/>
+        <ColumnDefinition Width="*"/>
+       </Grid.ColumnDefinitions>
+       <Border x:Name="SwitchTrack" Width="42" Height="24" CornerRadius="12" Background="{DynamicResource SubtleBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" HorizontalAlignment="Left" VerticalAlignment="Center">
+        <Ellipse x:Name="SwitchThumb" Width="16" Height="16" Fill="{DynamicResource MutedBrush}" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="3,0,0,0"/>
+       </Border>
+       <ContentPresenter Grid.Column="1" Content="{TemplateBinding Content}" VerticalAlignment="Center" RecognizesAccessKey="True" TextElement.Foreground="{DynamicResource TextBrush}"/>
+      </Grid>
+      <ControlTemplate.Triggers>
+       <Trigger Property="IsChecked" Value="True">
+        <Setter TargetName="SwitchTrack" Property="Background" Value="{DynamicResource AccentTextBrush}"/>
+        <Setter TargetName="SwitchTrack" Property="BorderBrush" Value="{DynamicResource AccentTextBrush}"/>
+        <Setter TargetName="SwitchThumb" Property="Fill" Value="White"/>
+        <Setter TargetName="SwitchThumb" Property="HorizontalAlignment" Value="Right"/>
+        <Setter TargetName="SwitchThumb" Property="Margin" Value="0,0,3,0"/>
+       </Trigger>
+      </ControlTemplate.Triggers>
+     </ControlTemplate>
+    </Setter.Value>
+   </Setter>
+  </Style>
+ </Window.Resources>
+
+ <Grid x:Name="RootPanel">
+  <Grid.ColumnDefinitions>
+   <ColumnDefinition Width="260"/>
+   <ColumnDefinition Width="*"/>
+  </Grid.ColumnDefinitions>
+
+  <!-- Left Sidebar -->
+  <Border Background="{DynamicResource SidebarBrush}" Padding="20,26" Grid.Column="0">
+   <StackPanel>
+    <TextBlock Text="◉  MEETING BUDDY" FontSize="17" Foreground="#FFFFFF" FontWeight="Bold" Margin="4,0,0,6"/>
+    <TextBlock Text="PERSONAL WORKSPACE" FontSize="10" Foreground="#91A6C8" FontWeight="SemiBold" Margin="4,0,0,38"/>
+    <TextBlock Text="WORKSPACE" FontSize="10" Foreground="#7F97BA" FontWeight="Bold" Margin="4,0,0,12"/>
+    <Button x:Name="OverviewNavButton" Content="Overview" Click="NavigateOverview_Click" HorizontalContentAlignment="Left" Margin="0,2,0,6" Padding="14,12" MinHeight="46" Background="{DynamicResource SidebarBrush}" Foreground="{DynamicResource SidebarTextBrush}" BorderThickness="0" FontSize="14" FontWeight="SemiBold"/>
+    <Button x:Name="PreferencesNavButton" Content="Preferences" Click="NavigatePreferences_Click" HorizontalContentAlignment="Left" Margin="0,2,0,6" Padding="14,12" MinHeight="46" Background="{DynamicResource SidebarBrush}" Foreground="{DynamicResource SidebarTextBrush}" BorderThickness="0" FontSize="14" FontWeight="SemiBold"/>
+    <Button x:Name="MissedCentreNavButton" Content="Missed Meetings (0)" Click="OpenMissedCentre_Click" HorizontalContentAlignment="Left" Margin="0,2,0,6" Padding="14,12" MinHeight="46" Background="{DynamicResource SidebarBrush}" Foreground="#FCA5A5" BorderThickness="0" FontSize="13" FontWeight="SemiBold"/>
+    <Button Content="Daily Summary" Click="ShowDailySummary_Click" HorizontalContentAlignment="Left" Margin="0,2,0,6" Padding="14,12" MinHeight="44" Background="{DynamicResource SidebarBrush}" Foreground="{DynamicResource SidebarTextBrush}" BorderThickness="0" FontSize="13" FontWeight="SemiBold"/>
+    <TextBlock Text="──────────────────" FontSize="12" Foreground="#40516B" Margin="0,24,0,18"/>
+    <TextBlock Text="FOCUSED ON YOUR DAY" FontSize="10" Foreground="#7F97BA" FontWeight="Bold" Margin="4,0,0,10"/>
+    <TextBlock Text="Your meetings, persistent alerts and settings — all in one place." FontSize="12" Foreground="#AFC0D8" TextWrapping="Wrap"/>
+   </StackPanel>
+  </Border>
+
+  <!-- Main Workspace -->
+  <Grid Grid.Column="1" Margin="28,22,28,20" MinWidth="0">
+   <Grid.RowDefinitions>
+    <RowDefinition Height="Auto"/>
+    <RowDefinition Height="*"/>
+   </Grid.RowDefinitions>
+
+   <!-- Header -->
+   <Grid Margin="0,0,0,18">
+    <Grid.ColumnDefinitions>
+     <ColumnDefinition Width="*"/>
+     <ColumnDefinition Width="Auto"/>
+    </Grid.ColumnDefinitions>
+    <StackPanel>
+     <TextBlock Text="Your workspace" FontSize="28" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold"/>
+     <TextBlock Text="Stay on schedule. Keep your day moving." FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0"/>
+    </StackPanel>
+    <Border Background="#E7F6EF" CornerRadius="18" Padding="14,9" VerticalAlignment="Center" Grid.Column="1">
+     <StackPanel Orientation="Horizontal">
+      <TextBlock Text="●  " FontSize="12" Foreground="#15804B" FontWeight="Bold"/>
+      <TextBlock x:Name="StatusText" Text="Reminders active" Foreground="#176A43" FontWeight="SemiBold" FontSize="12"/>
+     </StackPanel>
+    </Border>
+   </Grid>
+
+   <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0" x:Name="MainTabs" Margin="0" Padding="0">
+    <TabControl.Template>
+     <ControlTemplate TargetType="TabControl">
+      <ContentPresenter Content="{TemplateBinding SelectedContent}" Margin="0" SnapsToDevicePixels="True"/>
+     </ControlTemplate>
+    </TabControl.Template>
+
+    <!-- TAB 0: OVERVIEW -->
+    <TabItem Header="Overview" FontSize="14" Padding="15,9" Foreground="{DynamicResource TextBrush}">
+     <Grid Margin="0" Background="Transparent">
+      <Grid.RowDefinitions>
+       <RowDefinition Height="Auto"/>
+       <RowDefinition Height="Auto"/>
+       <RowDefinition Height="*"/>
+       <RowDefinition Height="Auto"/>
+      </Grid.RowDefinitions>
+
+      <!-- Customisable Overview Dashboard KPI Cards -->
+      <UniformGrid x:Name="DashboardCardsPanel" Columns="4" Grid.Row="0" Margin="0,0,0,16">
+       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="16,13" Margin="0,0,10,0">
+        <StackPanel>
+         <TextBlock Text="TODAY'S MEETINGS" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource MutedBrush}"/>
+         <TextBlock x:Name="KpiTodayCount" Text="0" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" Margin="0,4,0,0"/>
+        </StackPanel>
+       </Border>
+       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="16,13" Margin="0,0,10,0">
+        <StackPanel>
+         <TextBlock Text="NEXT MEETING" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource MutedBrush}"/>
+         <TextBlock x:Name="KpiNextCountdown" Text="None" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AccentTextBrush}" Margin="0,6,0,0" TextTrimming="CharacterEllipsis"/>
+        </StackPanel>
+       </Border>
+       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="16,13" Margin="0,0,10,0">
+        <StackPanel>
+         <TextBlock Text="THIS WEEK" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource MutedBrush}"/>
+         <TextBlock x:Name="KpiWeekCount" Text="0" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" Margin="0,4,0,0"/>
+        </StackPanel>
+       </Border>
+       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="16,13" Margin="0">
+        <StackPanel>
+         <TextBlock Text="ZOOM LINKS READY" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource MutedBrush}"/>
+         <TextBlock x:Name="KpiZoomCount" Text="0" FontSize="22" FontWeight="Bold" Foreground="#059669" Margin="0,4,0,0"/>
+        </StackPanel>
+       </Border>
+      </UniformGrid>
+
+      <!-- Action Toolbar -->
+      <Grid Grid.Row="1" Margin="0,0,0,14">
+       <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"/>
+        <ColumnDefinition Width="Auto"/>
+       </Grid.ColumnDefinitions>
+       <StackPanel>
+        <TextBlock Text="Upcoming meetings" FontSize="21" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+        <TextBlock Text="Switch between your agenda and a monthly calendar." Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,3,0,0"/>
+       </StackPanel>
+       <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+        <Button Content="Import ICS" Click="ImportIcs_Click" Margin="0,0,8,0" Padding="11,8" ToolTip="Import Zoom meetings from a Google Calendar export"/>
+        <Button Content="Quick paste" Click="QuickPaste_Click" Margin="0,0,8,0" Padding="11,8" ToolTip="Paste a Zoom invitation"/>
+        <Button x:Name="NewMeetingButton" Content="+  New meeting" Click="NewMeeting_Click" Background="#2563EB" Foreground="White" BorderBrush="#2563EB" MinWidth="135" Padding="14,8" Margin="0,0,10,0"/>
+        <Button x:Name="ListViewButton" Content="☷  List" Click="ListView_Click" MinWidth="100" Padding="12,8" BorderThickness="1" FontSize="13"/>
+        <Button x:Name="CalendarViewButton" Content="▦  Calendar" Click="CalendarView_Click" MinWidth="105" Padding="12,8" BorderThickness="1" FontSize="13" Margin="0"/>
+       </StackPanel>
+      </Grid>
+
+      <!-- Calendar Card -->
+      <Border x:Name="CalendarCard" Grid.Row="2" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="16" Padding="16" Margin="0" Visibility="Collapsed">
+       <Grid>
+        <Grid.RowDefinitions>
+         <RowDefinition Height="Auto"/>
+         <RowDefinition Height="Auto"/>
+         <RowDefinition Height="*"/>
+         <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid Margin="0,0,0,14">
+         <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*"/>
+          <ColumnDefinition Width="Auto"/>
+         </Grid.ColumnDefinitions>
+         <TextBlock x:Name="CalendarMonthLabel" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+         <StackPanel Orientation="Horizontal" Grid.Column="1">
+          <Button Content="‹" Click="CalendarPrevious_Click" MinWidth="50" Padding="10,7" Margin="5,0,0,0"/>
+          <Button Content="Today" Click="CalendarToday_Click" MinWidth="60" Padding="10,7" Margin="5,0,0,0"/>
+          <Button Content="›" Click="CalendarNext_Click" MinWidth="50" Padding="10,7" Margin="5,0,0,0"/>
+         </StackPanel>
+        </Grid>
+        <UniformGrid Columns="7" Margin="0,0,0,5" Grid.Row="1">
+         <TextBlock Text="MON" Foreground="{DynamicResource MutedBrush}" FontWeight="SemiBold" FontSize="11" TextAlignment="Center" Margin="0,5"/>
+         <TextBlock Text="TUE" Foreground="{DynamicResource MutedBrush}" FontWeight="SemiBold" FontSize="11" TextAlignment="Center" Margin="0,5"/>
+         <TextBlock Text="WED" Foreground="{DynamicResource MutedBrush}" FontWeight="SemiBold" FontSize="11" TextAlignment="Center" Margin="0,5"/>
+         <TextBlock Text="THU" Foreground="{DynamicResource MutedBrush}" FontWeight="SemiBold" FontSize="11" TextAlignment="Center" Margin="0,5"/>
+         <TextBlock Text="FRI" Foreground="{DynamicResource MutedBrush}" FontWeight="SemiBold" FontSize="11" TextAlignment="Center" Margin="0,5"/>
+         <TextBlock Text="SAT" Foreground="{DynamicResource MutedBrush}" FontWeight="SemiBold" FontSize="11" TextAlignment="Center" Margin="0,5"/>
+         <TextBlock Text="SUN" Foreground="{DynamicResource MutedBrush}" FontWeight="SemiBold" FontSize="11" TextAlignment="Center" Margin="0,5"/>
+        </UniformGrid>
+        <UniformGrid Columns="7" Rows="6" Grid.Row="2" x:Name="MonthCells"/>
+        <TextBlock Text="Select a meeting to view details, or choose an empty day to schedule a meeting." Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,12,0,0" Grid.Row="3"/>
+       </Grid>
+      </Border>
+
+      <!-- Agenda List Card -->
+      <Border x:Name="MeetingsCard" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="18" Padding="22" Margin="0" Grid.Row="2">
+       <Grid>
+        <Grid Margin="0,0,0,12" VerticalAlignment="Top">
+         <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*"/>
+          <ColumnDefinition Width="Auto"/>
+          <ColumnDefinition Width="Auto"/>
+         </Grid.ColumnDefinitions>
+         <StackPanel>
+          <TextBlock Text="Your agenda" FontSize="19" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+          <TextBlock x:Name="NextMeetingText" Text="Your next meeting will appear here" FontSize="12" Foreground="{DynamicResource AccentTextBrush}" Margin="0,4,0,0"/>
+         </StackPanel>
+
+         <!-- Search Box -->
+         <Grid Grid.Column="1" Width="220" Margin="0,0,10,0" VerticalAlignment="Center">
+          <TextBox x:Name="SearchBox" TextChanged="SearchBox_TextChanged" Padding="10,7" ToolTip="Search meetings by title or notes"/>
+          <TextBlock Text="Search title or notes..." IsHitTestVisible="False" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="12,0,0,0" FontSize="12">
+           <TextBlock.Style>
+            <Style TargetType="TextBlock">
+             <Setter Property="Visibility" Value="Collapsed"/>
+             <Style.Triggers>
+              <DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value="">
+               <Setter Property="Visibility" Value="Visible"/>
+              </DataTrigger>
+             </Style.Triggers>
+            </Style>
+           </TextBlock.Style>
+          </TextBlock>
+         </Grid>
+
+         <!-- View Filter -->
+         <ComboBox x:Name="ViewBox" Grid.Column="2" Width="130" SelectionChanged="View_Changed" VerticalAlignment="Center">
+          <ComboBoxItem Content="Today"/>
+          <ComboBoxItem Content="This Week"/>
+          <ComboBoxItem Content="All"/>
+          <ComboBoxItem Content="History"/>
+         </ComboBox>
+        </Grid>
+
+        <ListBox x:Name="MeetingList" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" FontSize="13" Padding="2" Margin="0,62,0,0" MouseDoubleClick="MeetingList_MouseDoubleClick">
+         <ListBox.ItemContainerStyle>
+          <Style TargetType="ListBoxItem">
+           <Setter Property="Padding" Value="12"/>
+           <Setter Property="Margin" Value="0,0,0,6"/>
+           <Setter Property="Background" Value="{DynamicResource SubtleBrush}"/>
+           <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+           <Setter Property="Template">
+            <Setter.Value>
+             <ControlTemplate TargetType="ListBoxItem">
+              <Border Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}">
+               <ContentPresenter/>
+              </Border>
+              <ControlTemplate.Triggers>
+               <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="{DynamicResource NavActiveBrush}"/>
+               </Trigger>
+               <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource NavActiveBrush}"/>
+               </Trigger>
+              </ControlTemplate.Triggers>
+             </ControlTemplate>
+            </Setter.Value>
+           </Setter>
+          </Style>
+         </ListBox.ItemContainerStyle>
+         <ListBox.ItemTemplate>
+          <DataTemplate>
+           <Grid Margin="2,2">
+            <Grid.ColumnDefinitions>
+             <ColumnDefinition Width="Auto"/>
+             <ColumnDefinition Width="*"/>
+             <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Width="5" CornerRadius="3" Margin="0,2,12,2" Background="{Binding EventColor}"/>
+
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+             <StackPanel Orientation="Horizontal">
+              <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+              <Border Background="#1F2563EB" CornerRadius="5" Padding="6,2" Margin="8,0,0,0" Visibility="{Binding HasNotes, Converter={StaticResource BoolToVis}}">
+               <TextBlock Text="Notes" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AccentTextBrush}"/>
+              </Border>
+             </StackPanel>
+             <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+              <TextBlock Foreground="{DynamicResource MutedBrush}" FontSize="12" Text="{Binding Start, StringFormat={}{0:ddd dd MMM yyyy  •  HH:mm}}"/>
+              <TextBlock Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="10,0,0,0" Text="{Binding Repeat}"/>
+              <TextBlock Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="10,0,0,0" Text="{Binding DurationMinutes, StringFormat={}{0} min}"/>
+             </StackPanel>
+            </StackPanel>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+             <Button Content="Join Zoom" Click="MeetingItem_Join_Click" Tag="{Binding}" Visibility="{Binding HasJoinUrl, Converter={StaticResource BoolToVis}}" Background="#2563EB" Foreground="White" BorderBrush="#2563EB" MinWidth="88" Padding="12,6" Margin="0,0,6,0"/>
+             <Button Content="Details" Click="MeetingItem_Details_Click" Tag="{Binding}" MinWidth="68" Padding="10,6" Margin="0,0,6,0"/>
+             <Button Content="Skip date" Click="MeetingItem_Skip_Click" Tag="{Binding}" Visibility="{Binding IsRecurring, Converter={StaticResource BoolToVis}}" MinWidth="74" Padding="10,6" Margin="0,0,6,0" ToolTip="Skip only this occurrence date"/>
+             <Button Content="Edit" Click="MeetingItem_Edit_Click" Tag="{Binding}" MinWidth="58" Padding="10,6" Margin="0,0,6,0"/>
+             <Button Content="Delete" Click="MeetingItem_Delete_Click" Tag="{Binding}" MinWidth="62" Padding="10,6" Margin="0"/>
+            </StackPanel>
+           </Grid>
+          </DataTemplate>
+         </ListBox.ItemTemplate>
+        </ListBox>
+
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="350" x:Name="EmptyMeetingsState">
+         <TextBlock Text="No meetings in this view" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" TextAlignment="Center"/>
+         <TextBlock Text="Try a different filter, clear your search, or schedule your next meeting." Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,16" TextAlignment="Center" TextWrapping="Wrap"/>
+         <Button Content="+  New meeting" Click="NewMeeting_Click" HorizontalAlignment="Center" Background="#2563EB" Foreground="White"/>
+        </StackPanel>
+       </Grid>
+      </Border>
+
+      <TextBlock Grid.Row="3" Text="Tip: double-click any meeting for full details and notes, or click Join Zoom to launch immediately." Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,10,0,0"/>
+     </Grid>
+    </TabItem>
+
+    <TabItem Header="Schedule meeting" FontSize="14" Padding="15,9" Foreground="{DynamicResource TextBrush}" Visibility="Collapsed">
+     <Grid Margin="0" Background="Transparent"/>
+    </TabItem>
+
+    <!-- TAB 2: PREFERENCES -->
+    <TabItem Header="Preferences" FontSize="14" Padding="15,9" Foreground="{DynamicResource TextBrush}">
+     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Margin="0,0,12,12">
+       <TextBlock Text="Preferences" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,5"/>
+       <TextBlock Text="Personalise your workspace, working hours, and persistent reminders." Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,22"/>
+
+       <!-- Appearance & Dashboard -->
+       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="14" Padding="22" Margin="0,0,0,16">
+        <StackPanel>
+         <TextBlock Text="Appearance &amp; Dashboard" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+         <TextBlock Text="Choose how Meeting Buddy looks and which dashboard widgets appear." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,18" TextWrapping="Wrap"/>
+         <Grid Margin="0,0,0,14">
+          <Grid.ColumnDefinitions>
+           <ColumnDefinition Width="*"/>
+           <ColumnDefinition Width="200"/>
+          </Grid.ColumnDefinitions>
+          <TextBlock Text="App theme" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+          <ComboBox Grid.Column="1" Width="180" HorizontalAlignment="Right" SelectedIndex="0" SelectionChanged="Settings_Changed" x:Name="ThemeBox">
+           <ComboBoxItem Content="Light"/>
+           <ComboBoxItem Content="Dark"/>
+          </ComboBox>
+         </Grid>
+         <CheckBox Content="Show Overview summary cards (Today, Next, Week, Zoom)" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Foreground="{DynamicResource TextBrush}" x:Name="ShowDashboardCardsBox"/>
+        </StackPanel>
+       </Border>
+
+       <!-- Reminders, Position & Custom Sound -->
+       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="14" Padding="22" Margin="0,0,0,16">
+        <StackPanel>
+         <TextBlock Text="Reminders &amp; Alert Appearance" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+         <TextBlock Text="Live meeting alerts stay visible until Join Zoom or Acknowledge is clicked." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,18" TextWrapping="Wrap"/>
+         <CheckBox Content="Play a sound with reminders" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,14" x:Name="SoundBox"/>
+         <CheckBox Content="Flash the alert window border" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,18" x:Name="FlashBox"/>
+
+         <Grid Margin="0,0,0,14">
+          <Grid.ColumnDefinitions>
+           <ColumnDefinition Width="*"/>
+           <ColumnDefinition Width="200"/>
+          </Grid.ColumnDefinitions>
+          <TextBlock Text="Alert screen position" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+          <ComboBox Grid.Column="1" Width="180" HorizontalAlignment="Right" SelectedIndex="0" SelectionChanged="Settings_Changed" x:Name="AlertPositionBox">
+           <ComboBoxItem Content="Center Screen" Tag="Center"/>
+           <ComboBoxItem Content="Top Right" Tag="TopRight"/>
+           <ComboBoxItem Content="Bottom Right" Tag="BottomRight"/>
+          </ComboBox>
+         </Grid>
+
+         <Grid Margin="0,0,0,14">
+          <Grid.ColumnDefinitions>
+           <ColumnDefinition Width="*"/>
+           <ColumnDefinition Width="Auto"/>
+           <ColumnDefinition Width="Auto"/>
+          </Grid.ColumnDefinitions>
+          <TextBlock Text="Notification sound" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+          <ComboBox Grid.Column="1" Width="180" Margin="0,0,8,0" SelectedIndex="0" SelectionChanged="Settings_Changed" x:Name="SoundChoiceBox">
+           <ComboBoxItem Content="System Exclamation" Tag="Exclamation"/>
+           <ComboBoxItem Content="System Asterisk" Tag="Asterisk"/>
+           <ComboBoxItem Content="System Beep" Tag="Beep"/>
+           <ComboBoxItem Content="Custom WAV file..." Tag="Custom"/>
+          </ComboBox>
+          <Button Grid.Column="2" Content="Browse..." Click="BrowseSound_Click" MinWidth="85" Padding="10,7" Margin="0"/>
+         </Grid>
+         <TextBlock x:Name="CustomSoundPathText" Text="" FontSize="11" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,14"/>
+
+         <Grid Margin="0,0,0,14">
+          <Grid.ColumnDefinitions>
+           <ColumnDefinition Width="*"/>
+           <ColumnDefinition Width="120"/>
+          </Grid.ColumnDefinitions>
+          <TextBlock Text="Default meeting duration (minutes)" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+          <TextBox Grid.Column="1" Text="30" LostFocus="Settings_Changed" HorizontalAlignment="Stretch" x:Name="DurationBox"/>
+         </Grid>
+
+         <CheckBox Content="Show Daily Meeting Summary popup each morning" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,12" x:Name="DailySummaryEnabledBox"/>
+         <Grid>
+          <Grid.ColumnDefinitions>
+           <ColumnDefinition Width="*"/>
+           <ColumnDefinition Width="120"/>
+          </Grid.ColumnDefinitions>
+          <TextBlock Text="Daily Summary time (HH:mm)" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+          <TextBox Grid.Column="1" Text="08:30" LostFocus="Settings_Changed" HorizontalAlignment="Stretch" x:Name="DailySummaryTimeBox"/>
+         </Grid>
+        </StackPanel>
+       </Border>
+
+       <!-- Working Hours & Working Days -->
+       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="14" Padding="22" Margin="0,0,0,16">
+        <StackPanel>
+         <TextBlock Text="Working Hours &amp; Days" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+         <TextBlock Text="Used for ICS import filtering and active reminder scheduling." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,16" TextWrapping="Wrap"/>
+         <Grid Margin="0,0,0,14">
+          <Grid.ColumnDefinitions>
+           <ColumnDefinition Width="*"/>
+           <ColumnDefinition Width="100"/>
+           <ColumnDefinition Width="Auto"/>
+           <ColumnDefinition Width="100"/>
+          </Grid.ColumnDefinitions>
+          <TextBlock Text="Working hours window (HH:mm)" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+          <TextBox x:Name="WorkStartBox" Grid.Column="1" Text="08:00" LostFocus="Settings_Changed" TextAlignment="Center"/>
+          <TextBlock Grid.Column="2" Text="to" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="10,0"/>
+          <TextBox x:Name="WorkEndBox" Grid.Column="3" Text="17:00" LostFocus="Settings_Changed" TextAlignment="Center"/>
+         </Grid>
+         <WrapPanel>
+          <CheckBox x:Name="WorkMonBox" Content="Mon" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Margin="0,0,16,0" Foreground="{DynamicResource TextBrush}"/>
+          <CheckBox x:Name="WorkTueBox" Content="Tue" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Margin="0,0,16,0" Foreground="{DynamicResource TextBrush}"/>
+          <CheckBox x:Name="WorkWedBox" Content="Wed" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Margin="0,0,16,0" Foreground="{DynamicResource TextBrush}"/>
+          <CheckBox x:Name="WorkThuBox" Content="Thu" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Margin="0,0,16,0" Foreground="{DynamicResource TextBrush}"/>
+          <CheckBox x:Name="WorkFriBox" Content="Fri" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Margin="0,0,16,0" Foreground="{DynamicResource TextBrush}"/>
+          <CheckBox x:Name="WorkSatBox" Content="Sat" IsChecked="False" Checked="Settings_Changed" Unchecked="Settings_Changed" Margin="0,0,16,0" Foreground="{DynamicResource TextBrush}"/>
+          <CheckBox x:Name="WorkSunBox" Content="Sun" IsChecked="False" Checked="Settings_Changed" Unchecked="Settings_Changed" Foreground="{DynamicResource TextBrush}"/>
+         </WrapPanel>
+        </StackPanel>
+       </Border>
+
+              <!-- Stream Deck XL Integration -->
+       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="14" Padding="22" Margin="0,0,0,16">
+        <StackPanel>
+         <TextBlock Text="Elgato Stream Deck XL Integration" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+         <TextBlock Text="Local bridge API for 32-key (8×4) Stream Deck actions, live countdowns, and one-touch Zoom join." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,16" TextWrapping="Wrap"/>
+         <CheckBox Content="Enable local Stream Deck bridge API (127.0.0.1)" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,14" x:Name="StreamDeckEnabledBox"/>
+         <Grid Margin="0,0,0,14">
+          <Grid.ColumnDefinitions>
+           <ColumnDefinition Width="*"/>
+           <ColumnDefinition Width="120"/>
+          </Grid.ColumnDefinitions>
+          <TextBlock Text="Local API port" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+          <TextBox Grid.Column="1" Text="48291" LostFocus="Settings_Changed" HorizontalAlignment="Stretch" x:Name="StreamDeckPortBox"/>
+         </Grid>
+         <Grid>
+          <Grid.ColumnDefinitions>
+           <ColumnDefinition Width="*"/>
+           <ColumnDefinition Width="Auto"/>
+          </Grid.ColumnDefinitions>
+          <TextBlock x:Name="StreamDeckStatusText" Text="Listening on 127.0.0.1:48291" FontSize="12" Foreground="{DynamicResource AccentTextBrush}" VerticalAlignment="Center"/>
+          <Button Grid.Column="1" Content="Bridge Info &amp; Setup" Click="TestStreamDeckBridge_Click" MinWidth="150" Margin="0"/>
+         </Grid>
+        </StackPanel>
+       </Border>
+
+       <!-- Startup & Testing -->
+       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="14" Padding="22" Margin="0,0,0,16">
+        <StackPanel>
+         <TextBlock Text="Startup and diagnostics" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+         <TextBlock Text="Keep reminders running while you work." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,18" TextWrapping="Wrap"/>
+         <CheckBox Content="Start with Windows (minimised to tray)" Checked="Startup_Changed" Unchecked="Startup_Changed" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,16" x:Name="StartWithWindows"/>
+         <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+          <Button Content="Pause alerts" Click="Pause_Click" MinWidth="135" x:Name="PauseButton"/>
+          <Button Content="Test pre-meeting alert" Click="Test_Click" MinWidth="160"/>
+          <Button Content="Test live alert" Click="TestLive_Click" MinWidth="130"/>
+          <Button Content="Diagnostics &amp; Backups" Click="Diagnostics_Click" MinWidth="165" Margin="0"/>
+         </StackPanel>
+         <TextBlock Text="Missed reminders: 0" Foreground="{DynamicResource MutedBrush}" x:Name="MissedText"/>
+        </StackPanel>
+       </Border>
+      </StackPanel>
+     </ScrollViewer>
+    </TabItem>
+   </TabControl>
+  </Grid>
+
+  <!-- OVERLAY 1: ADD / EDIT MEETING DIALOG -->
+  <Grid x:Name="MeetingDialogOverlay" Grid.ColumnSpan="2" Panel.ZIndex="50" Visibility="Collapsed" Background="#B9000000">
+   <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="16,20" VerticalAlignment="Center" MaxHeight="740">
+    <Border x:Name="EditorCard" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="16" Padding="28" Margin="0" VerticalAlignment="Stretch" MaxWidth="690" HorizontalAlignment="Center" Width="690">
+     <StackPanel>
+      <Button Content="✕  Close" Click="CloseMeetingDialog_Click" HorizontalAlignment="Right" Margin="0,0,0,10" Background="{DynamicResource SubtleBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrushTheme}"/>
+      <TextBlock Text="Schedule a meeting" FontSize="19" FontWeight="SemiBold" Margin="0,0,0,4" Foreground="{DynamicResource TextBrush}"/>
+      <TextBlock Text="Add the details below and we’ll handle the reminders." Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,0,0,16"/>
+
+      <TextBlock Text="MEETING TITLE" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>
+      <TextBox x:Name="TitleBox" Height="39" ToolTip="e.g. Weekly team catch-up" Margin="0,0,0,12" Foreground="{DynamicResource InputTextBrush}" Background="{DynamicResource InputBrush}"/>
+
+      <TextBlock Text="ZOOM / MEETING LINK (OPTIONAL)" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>
+      <TextBox x:Name="JoinBox" Height="38" ToolTip="Zoom, Teams, or Meet link" Margin="0,0,0,12" Foreground="{DynamicResource InputTextBrush}" Background="{DynamicResource InputBrush}"/>
+
+      <TextBlock Text="MEETING NOTES (OPTIONAL)" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>
+      <TextBox x:Name="NotesBox" Height="74" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" ToolTip="Agenda, talking points, or passcodes" Margin="0,0,0,14" Foreground="{DynamicResource InputTextBrush}" Background="{DynamicResource InputBrush}"/>
+
+      <StackPanel Margin="0,0,0,16">
+       <TextBlock Text="EVENT COLOUR" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,7"/>
+       <ComboBox x:Name="EventColorBox" Height="40" Width="280" HorizontalAlignment="Left" Foreground="{DynamicResource InputTextBrush}" Background="{DynamicResource InputBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" SelectedIndex="0">
+        <ComboBoxItem Content="🔵  Blue · General" Tag="#2563EB"/>
+        <ComboBoxItem Content="🟢  Green · Team" Tag="#059669"/>
+        <ComboBoxItem Content="🟣  Purple · Projects" Tag="#7C3AED"/>
+        <ComboBoxItem Content="🟠  Orange · Important" Tag="#C76A13"/>
+        <ComboBoxItem Content="🔴  Red · Urgent" Tag="#C2414B"/>
+        <ComboBoxItem Content="🩵  Teal · Customers" Tag="#087E8B"/>
+       </ComboBox>
+      </StackPanel>
+
+      <Grid Margin="0,0,0,10">
+       <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="Auto"/>
+       </Grid.RowDefinitions>
+       <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"/>
+        <ColumnDefinition Width="*"/>
+       </Grid.ColumnDefinitions>
+       <StackPanel Margin="0,0,10,14" Grid.Row="0" Grid.Column="0">
+        <TextBlock Text="DATE" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,7"/>
+        <DatePicker x:Name="MeetingDate" Height="40" Foreground="{DynamicResource InputTextBrush}" Background="{DynamicResource InputBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" MinWidth="0" HorizontalAlignment="Stretch" BorderThickness="1" Padding="0" FontSize="13" SelectedDateFormat="Short">
+         <DatePicker.Resources>
+          <Style TargetType="{x:Type DatePickerTextBox}" BasedOn="{StaticResource MeetingDateTextStyle}"/>
+          <Style TargetType="{x:Type CalendarDayButton}">
+           <Setter Property="Foreground" Value="{DynamicResource InputTextBrush}"/>
+           <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+           <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushTheme}"/>
+          </Style>
+         </DatePicker.Resources>
+        </DatePicker>
+       </StackPanel>
+       <StackPanel Margin="10,0,0,14" Grid.Row="0" Grid.Column="1">
+        <TextBlock Text="START TIME" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,7"/>
+        <ComboBox x:Name="TimeBox" Height="40" SelectionChanged="StartTime_Changed" LostKeyboardFocus="StartTime_LostFocus" IsEditable="True" IsTextSearchEnabled="True" StaysOpenOnEdit="True" ToolTip="Choose a time or type HH:mm" Foreground="{DynamicResource InputTextBrush}" Background="{DynamicResource InputBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" MinWidth="0" HorizontalAlignment="Stretch"/>
+       </StackPanel>
+       <StackPanel Margin="0,0,10,14" Grid.Row="1" Grid.Column="0">
+        <TextBlock Text="DURATION" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,7"/>
+        <ComboBox x:Name="MeetingDurationBox" Height="40" SelectionChanged="MeetingDuration_Changed" Foreground="{DynamicResource InputTextBrush}" Background="{DynamicResource InputBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" MinWidth="0" HorizontalAlignment="Stretch">
+         <ComboBoxItem Content="30 minutes" Tag="30" Foreground="{DynamicResource TextBrush}"/>
+         <ComboBoxItem Content="1 hour" Tag="60" Foreground="{DynamicResource TextBrush}"/>
+         <ComboBoxItem Content="Custom end time" Tag="custom" Foreground="{DynamicResource TextBrush}"/>
+        </ComboBox>
+       </StackPanel>
+       <StackPanel Margin="10,0,0,14" Grid.Row="1" Grid.Column="1">
+        <TextBlock Text="REMIND ME" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,7"/>
+        <ComboBox x:Name="BeforeBox" Height="40" SelectedIndex="1" Foreground="{DynamicResource InputTextBrush}" Background="{DynamicResource InputBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" MinWidth="0" HorizontalAlignment="Stretch">
+         <ComboBoxItem Content="At start" Tag="0" Foreground="{DynamicResource TextBrush}"/>
+         <ComboBoxItem Content="5 min before" Tag="5" Foreground="{DynamicResource TextBrush}"/>
+         <ComboBoxItem Content="10 min before" Tag="10" Foreground="{DynamicResource TextBrush}"/>
+         <ComboBoxItem Content="15 min before" Tag="15" Foreground="{DynamicResource TextBrush}"/>
+        </ComboBox>
+       </StackPanel>
+       <StackPanel Margin="0,2,0,4" Grid.Row="2" Grid.ColumnSpan="2">
+        <TextBlock Text="REPEAT" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,8"/>
+        <CheckBox x:Name="RepeatEnabledBox" Content="Repeat this meeting" IsChecked="False" VerticalAlignment="Center" Margin="0" Checked="RepeatEnabled_Changed" Unchecked="RepeatEnabled_Changed" Foreground="{DynamicResource TextBrush}" MinHeight="32" Style="{StaticResource MeetingToggleStyle}"/>
+       </StackPanel>
+      </Grid>
+
+      <StackPanel Margin="0,0,0,8" HorizontalAlignment="Left" Width="300">
+       <TextBlock Text="END TIME" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,7"/>
+       <ComboBox x:Name="EndTimeBox" Width="300" Height="40" IsEditable="True" IsTextSearchEnabled="True" StaysOpenOnEdit="True" SelectionChanged="EndTime_Changed" LostKeyboardFocus="EndTime_LostFocus" ToolTip="Choose or type an exact end time (HH:mm)" Foreground="{DynamicResource InputTextBrush}" Background="{DynamicResource InputBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" HorizontalAlignment="Stretch"/>
+      </StackPanel>
+
+      <StackPanel x:Name="RecurrencePanel" Visibility="Collapsed" Margin="0,12,0,0">
+       <TextBlock Text="REPEAT FREQUENCY" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>
+       <ComboBox x:Name="RepeatBox" Width="220" HorizontalAlignment="Left" Height="37" SelectedIndex="1" Foreground="{DynamicResource InputTextBrush}" Background="{DynamicResource InputBrush}" BorderBrush="{DynamicResource BorderBrushTheme}">
+        <ComboBoxItem Content="Daily" Foreground="{DynamicResource TextBrush}"/>
+        <ComboBoxItem Content="Weekly" Foreground="{DynamicResource TextBrush}"/>
+        <ComboBoxItem Content="Every 2 weeks" Foreground="{DynamicResource TextBrush}"/>
+        <ComboBoxItem Content="Weekdays" Foreground="{DynamicResource TextBrush}"/>
+       </ComboBox>
+      </StackPanel>
+
+      <StackPanel x:Name="WeekdayPanel" Visibility="Collapsed" Margin="0,12,0,0">
+       <TextBlock Text="REPEAT ON" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>
+       <WrapPanel>
+        <CheckBox x:Name="MonBox" Content="Mon" IsChecked="True" Margin="0,0,14,0" Foreground="{DynamicResource TextBrush}"/>
+        <CheckBox x:Name="TueBox" Content="Tue" IsChecked="True" Margin="0,0,14,0" Foreground="{DynamicResource TextBrush}"/>
+        <CheckBox x:Name="WedBox" Content="Wed" IsChecked="True" Margin="0,0,14,0" Foreground="{DynamicResource TextBrush}"/>
+        <CheckBox x:Name="ThuBox" Content="Thu" IsChecked="True" Margin="0,0,14,0" Foreground="{DynamicResource TextBrush}"/>
+        <CheckBox x:Name="FriBox" Content="Fri" IsChecked="True" Margin="0,0,14,0" Foreground="{DynamicResource TextBrush}"/>
+        <CheckBox x:Name="SatBox" Content="Sat" Margin="0,0,14,0" Foreground="{DynamicResource TextBrush}"/>
+        <CheckBox x:Name="SunBox" Content="Sun" Foreground="{DynamicResource TextBrush}"/>
+       </WrapPanel>
+      </StackPanel>
+
+      <Grid Margin="0,22,0,0">
+       <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"/>
+        <ColumnDefinition Width="Auto"/>
+        <ColumnDefinition Width="Auto"/>
+       </Grid.ColumnDefinitions>
+       <Button Grid.Column="1" Content="Cancel" Click="CancelEdit_Click" MinWidth="110" Margin="0,0,10,0" Background="{DynamicResource SubtleBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrushTheme}"/>
+       <Button x:Name="AddButton" Content="+  Save meeting" Click="Add_Click" HorizontalAlignment="Right" Margin="0" Background="{DynamicResource AccentTextBrush}" Foreground="White" BorderBrush="{DynamicResource AccentTextBrush}" FontWeight="SemiBold" Grid.Column="2" MinWidth="150"/>
+      </Grid>
+      <Button x:Name="CancelEditButton" Content="Cancel editing" Click="CancelEdit_Click" Visibility="Collapsed" HorizontalAlignment="Right" Margin="0,8,0,0" Width="0" Height="0" IsHitTestVisible="False"/>
+     </StackPanel>
+    </Border>
+   </ScrollViewer>
+  </Grid>
+
+  <!-- OVERLAY 2: MEETING DETAILS POPUP -->
+  <Grid x:Name="MeetingDetailsOverlay" Grid.ColumnSpan="2" Panel.ZIndex="60" Visibility="Collapsed" Background="#B9000000">
+   <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="16,24" VerticalAlignment="Center" MaxHeight="720">
+    <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="16" Padding="28" MaxWidth="640" Width="640" HorizontalAlignment="Center">
+     <StackPanel>
+      <Grid Margin="0,0,0,12">
+       <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"/>
+        <ColumnDefinition Width="Auto"/>
+       </Grid.ColumnDefinitions>
+       <TextBlock x:Name="DetailsTitleText" Text="Meeting Details" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+       <Button Grid.Column="1" Content="✕  Close" Click="CloseDetailsDialog_Click" Margin="12,0,0,0"/>
+      </Grid>
+
+      <TextBlock x:Name="DetailsWhenText" FontSize="14" Foreground="{DynamicResource AccentTextBrush}" FontWeight="SemiBold" Margin="0,0,0,4"/>
+      <TextBlock x:Name="DetailsRecurrenceText" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,16"/>
+
+      <Border Background="{DynamicResource SubtleBrush}" CornerRadius="10" Padding="14" Margin="0,0,0,16">
+       <Grid>
+        <Grid.ColumnDefinitions>
+         <ColumnDefinition Width="*"/>
+         <ColumnDefinition Width="Auto"/>
+         <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <StackPanel VerticalAlignment="Center" Margin="0,0,10,0">
+         <TextBlock Text="ZOOM MEETING LINK" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource MutedBrush}"/>
+         <TextBlock x:Name="DetailsUrlText" Text="No link attached" FontSize="12" Foreground="{DynamicResource TextBrush}" TextTrimming="CharacterEllipsis" Margin="0,3,0,0"/>
+        </StackPanel>
+        <Button x:Name="DetailsCopyLinkButton" Grid.Column="1" Content="Copy link" Click="DetailsCopyLink_Click" MinWidth="86" Padding="12,7" Margin="0,0,8,0"/>
+        <Button x:Name="DetailsJoinButton" Grid.Column="2" Content="Join Zoom" Click="DetailsJoin_Click" Background="#2563EB" Foreground="White" BorderBrush="#2563EB" MinWidth="96" Padding="14,7" Margin="0"/>
+       </Grid>
+      </Border>
+
+      <TextBlock Text="MEETING NOTES" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,6"/>
+      <TextBox x:Name="DetailsNotesBox" Height="130" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" ToolTip="Write notes for this meeting" Margin="0,0,0,18"/>
+
+      <Grid>
+       <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto"/>
+        <ColumnDefinition Width="Auto"/>
+        <ColumnDefinition Width="*"/>
+        <ColumnDefinition Width="Auto"/>
+       </Grid.ColumnDefinitions>
+       <Button Grid.Column="0" Content="Edit meeting" Click="DetailsEdit_Click" MinWidth="105" Margin="0,0,8,0"/>
+       <Button x:Name="DetailsSkipOccurrenceButton" Grid.Column="1" Content="Skip this date" Click="DetailsSkipOccurrence_Click" MinWidth="110" Margin="0,0,8,0"/>
+       <Button Grid.Column="3" Content="Save notes" Click="DetailsSaveNotes_Click" Background="#2563EB" Foreground="White" BorderBrush="#2563EB" MinWidth="120" Margin="0"/>
+      </Grid>
+     </StackPanel>
+    </Border>
+   </ScrollViewer>
+  </Grid>
+
+  <!-- OVERLAY 3: MISSED MEETING CENTRE -->
+  <Grid x:Name="MissedCentreOverlay" Grid.ColumnSpan="2" Panel.ZIndex="65" Visibility="Collapsed" Background="#B9000000">
+   <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="16" Padding="28" MaxWidth="680" Width="680" MaxHeight="620" HorizontalAlignment="Center" VerticalAlignment="Center">
+    <Grid>
+     <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+     </Grid.RowDefinitions>
+     <Grid Margin="0,0,0,14">
+      <Grid.ColumnDefinitions>
+       <ColumnDefinition Width="*"/>
+       <ColumnDefinition Width="Auto"/>
+      </Grid.ColumnDefinitions>
+      <StackPanel>
+       <TextBlock Text="Missed Meeting Centre" FontSize="21" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+       <TextBlock Text="Meetings whose reminders fired while away or remain unacknowledged." FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0"/>
+      </StackPanel>
+      <Button Grid.Column="1" Content="✕  Close" Click="CloseMissedCentre_Click" Margin="12,0,0,0"/>
+     </Grid>
+
+     <ListBox x:Name="MissedList" Grid.Row="1" Background="Transparent" BorderThickness="0" Margin="0,0,0,14">
+      <ListBox.ItemTemplate>
+       <DataTemplate>
+        <Border Background="{DynamicResource SubtleBrush}" CornerRadius="10" Padding="12" Margin="0,0,0,6">
+         <Grid>
+          <Grid.ColumnDefinitions>
+           <ColumnDefinition Width="*"/>
+           <ColumnDefinition Width="Auto"/>
+          </Grid.ColumnDefinitions>
+          <StackPanel VerticalAlignment="Center">
+           <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+           <TextBlock Text="{Binding Subtitle}" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0"/>
+          </StackPanel>
+          <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+           <Button Content="Join Zoom" Click="MissedItem_Join_Click" Tag="{Binding}" Visibility="{Binding HasJoinUrl, Converter={StaticResource BoolToVis}}" Background="#2563EB" Foreground="White" BorderBrush="#2563EB" MinWidth="85" Padding="10,6" Margin="0,0,6,0"/>
+           <Button Content="Acknowledge" Click="MissedItem_Ack_Click" Tag="{Binding}" MinWidth="95" Padding="10,6" Margin="0"/>
+          </StackPanel>
+         </Grid>
+        </Border>
+       </DataTemplate>
+      </ListBox.ItemTemplate>
+     </ListBox>
+
+     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+      <Button Content="Acknowledge all" Click="ClearAllMissed_Click" MinWidth="130" Margin="0"/>
+     </StackPanel>
+    </Grid>
+   </Border>
+  </Grid>
+
+  <!-- OVERLAY 4: DAILY MEETING SUMMARY -->
+  <Grid x:Name="DailySummaryOverlay" Grid.ColumnSpan="2" Panel.ZIndex="70" Visibility="Collapsed" Background="#B9000000">
+   <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="16" Padding="28" MaxWidth="620" Width="620" MaxHeight="600" HorizontalAlignment="Center" VerticalAlignment="Center">
+    <Grid>
+     <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+     </Grid.RowDefinitions>
+     <Grid Margin="0,0,0,14">
+      <Grid.ColumnDefinitions>
+       <ColumnDefinition Width="*"/>
+       <ColumnDefinition Width="Auto"/>
+      </Grid.ColumnDefinitions>
+      <StackPanel>
+       <TextBlock Text="Daily Meeting Summary" FontSize="21" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+       <TextBlock x:Name="DailySummarySubtitle" FontSize="12" Foreground="{DynamicResource AccentTextBrush}" Margin="0,3,0,0"/>
+      </StackPanel>
+      <Button Grid.Column="1" Content="✕  Close" Click="CloseDailySummary_Click" Margin="12,0,0,0"/>
+     </Grid>
+
+     <ListBox x:Name="DailySummaryList" Grid.Row="1" Background="Transparent" BorderThickness="0" Margin="0,0,0,14">
+      <ListBox.ItemTemplate>
+       <DataTemplate>
+        <Border Background="{DynamicResource SubtleBrush}" CornerRadius="10" Padding="12" Margin="0,0,0,6">
+         <Grid>
+          <Grid.ColumnDefinitions>
+           <ColumnDefinition Width="*"/>
+           <ColumnDefinition Width="Auto"/>
+          </Grid.ColumnDefinitions>
+          <StackPanel VerticalAlignment="Center">
+           <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+           <TextBlock Text="{Binding Start, StringFormat={}{0:HH:mm}  •  {1} min}" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0"/>
+          </StackPanel>
+          <Button Grid.Column="1" Content="Join Zoom" Click="MeetingItem_Join_Click" Tag="{Binding}" Visibility="{Binding HasJoinUrl, Converter={StaticResource BoolToVis}}" Background="#2563EB" Foreground="White" BorderBrush="#2563EB" MinWidth="88" Padding="10,6" Margin="0"/>
+         </Grid>
+        </Border>
+       </DataTemplate>
+      </ListBox.ItemTemplate>
+     </ListBox>
+
+     <Button Grid.Row="2" Content="Got it" Click="CloseDailySummary_Click" Background="#2563EB" Foreground="White" BorderBrush="#2563EB" HorizontalAlignment="Right" MinWidth="110" Margin="0"/>
+    </Grid>
+   </Border>
+  </Grid>
+ </Grid>
+</Window>
