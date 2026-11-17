@@ -589,7 +589,10 @@
           <CheckBox x:Name="PlatformTeamsBox" Content="Microsoft Teams" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,8"/>
           <CheckBox x:Name="PlatformZoomBox" Content="Zoom" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,8"/>
           <CheckBox x:Name="PlatformMeetBox" Content="Google Meet" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,14"/>
-          <Button Content="Save profile" HorizontalAlignment="Left" Padding="18,9" Click="SaveProfile_Click"/>
+          <StackPanel Orientation="Horizontal">
+           <Button Content="Save profile" HorizontalAlignment="Left" Padding="18,9" Click="SaveProfile_Click"/>
+           <Button Content="Run setup again" HorizontalAlignment="Left" Padding="18,9" Margin="10,0,0,0" Click="RunSetupAgain_Click" ToolTip="Edit your name, workplace and meeting platforms"/>
+          </StackPanel>
          </StackPanel>
         </Border>
        </StackPanel>
