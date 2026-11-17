@@ -105,6 +105,7 @@ public partial class MainWindow : Window
     }
     private readonly HashSet<string> missedKeys = new();
     private readonly Dictionary<string, HashSet<int>> alertStages = new();
+    private DateTime lastReminderCheck = DateTime.Now;
     private string lastDailySummaryDate = "";
     private AppSettings settings = new();
 
@@ -181,6 +182,15 @@ public partial class MainWindow : Window
             MeetingDetailsOverlay.Visibility != Visibility.Visible)
         {
             OpenMeetingDialog();
+            e.Handled = true;
+            return;
+        }
+        if (System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.Control &&
+            e.Key == System.Windows.Input.Key.P &&
+            MeetingDialogOverlay.Visibility != Visibility.Visible &&
+            MeetingDetailsOverlay.Visibility != Visibility.Visible)
+        {
+            ToggleReminders();
             e.Handled = true;
             return;
         }
@@ -1450,6 +1460,10 @@ public partial class MainWindow : Window
     private void CheckMeetings()
     {
         var now = DateTime.Now;
+        // Detect resume after sleep or a suspended UI thread. Missed reminders are
+        // collected by the existing missed-meeting centre rather than replayed as popups.
+        var resumedAfterGap = now - lastReminderCheck > TimeSpan.FromMinutes(2);
+        lastReminderCheck = now;
         var workingDays = settings.WorkingDays ?? new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday };
 
         if (!paused && !IsOnPto(now) && settings.DailySummaryEnabled && workingDays.Contains(now.DayOfWeek) &&
@@ -1494,7 +1508,7 @@ public partial class MainWindow : Window
                 {
                     var due = when.AddMinutes(-offset);
                     var mKey = $"{key}:{offset}";
-                    if (now >= due && now < due.AddSeconds(75) && stages.Add(offset))
+                    if (!resumedAfterGap && now >= due && now < due.AddSeconds(75) && stages.Add(offset))
                     {
                         bool isLive = offset == 0;
                         ShowAlert(
@@ -1506,7 +1520,7 @@ public partial class MainWindow : Window
                             m.Id,
                             mKey);
                     }
-                    else if (now >= due.AddSeconds(75) && !stages.Contains(offset) && now < m.End)
+                    else if ((now >= due.AddSeconds(75) || (resumedAfterGap && now >= due)) && !stages.Contains(offset) && now < m.End)
                     {
                         stages.Add(offset);
                         if (missedKeys.Add(mKey))
@@ -1525,6 +1539,18 @@ public partial class MainWindow : Window
             }
         }
 
-        if (alertStages.Count > 3000) alertStages.Clear();
+        // Retain recent occurrence state; never clear the entire set and re-alert.
+        if (alertStages.Count > 3000)
+        {
+            var cutoff = now.AddDays(-7);
+            foreach (var key in alertStages.Keys.ToArray())
+            {
+                var separator = key.LastIndexOf(':');
+                if (separator >= 0 && DateTime.TryParse(key[(separator + 1)..],
+                    CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var occurrence) &&
+                    occurrence < cutoff)
+                    alertStages.Remove(key);
+            }
+        }
     }
 }
