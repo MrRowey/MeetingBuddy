@@ -23,6 +23,40 @@
     </Setter.Value>
    </Setter>
   </Style>
+  <Style x:Key="RoundedActionButtonStyle" TargetType="Button">
+   <Setter Property="Padding" Value="15,9"/><Setter Property="Margin" Value="0,0,8,0"/><Setter Property="MinHeight" Value="36"/>
+   <Setter Property="FontSize" Value="13"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Cursor" Value="Hand"/>
+   <Setter Property="Background" Value="{DynamicResource SubtleBrush}"/><Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+   <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushTheme}"/><Setter Property="BorderThickness" Value="1"/>
+   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+    <Border x:Name="ButtonSurface" CornerRadius="9" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}">
+     <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+    </Border>
+    <ControlTemplate.Triggers>
+     <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ButtonSurface" Property="BorderBrush" Value="#60A5FA"/></Trigger>
+     <Trigger Property="IsPressed" Value="True"><Setter TargetName="ButtonSurface" Property="Opacity" Value="0.78"/></Trigger>
+     <Trigger Property="IsEnabled" Value="False"><Setter TargetName="ButtonSurface" Property="Opacity" Value="0.45"/></Trigger>
+    </ControlTemplate.Triggers>
+   </ControlTemplate></Setter.Value></Setter>
+  </Style>
+  <Style x:Key="SettingsSwitchStyle" TargetType="CheckBox">
+   <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/><Setter Property="Cursor" Value="Hand"/>
+   <Setter Property="MinHeight" Value="34"/><Setter Property="Margin" Value="0,0,0,10"/>
+   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="CheckBox">
+    <Grid MinHeight="32"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+     <ContentPresenter VerticalAlignment="Center" Margin="0,0,16,0" RecognizesAccessKey="True"/>
+     <Grid Grid.Column="1" Width="44" Height="26" VerticalAlignment="Center">
+      <Border x:Name="Track" CornerRadius="13" Background="#64748B"/>
+      <Ellipse x:Name="Thumb" Width="20" Height="20" HorizontalAlignment="Left" Margin="3,0,0,0" Fill="White"/>
+     </Grid>
+    </Grid>
+    <ControlTemplate.Triggers>
+     <Trigger Property="IsChecked" Value="True"><Setter TargetName="Track" Property="Background" Value="#2563EB"/><Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right"/><Setter TargetName="Thumb" Property="Margin" Value="0,0,3,0"/></Trigger>
+     <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Track" Property="Opacity" Value="0.85"/></Trigger>
+     <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Track" Property="Opacity" Value="0.45"/></Trigger>
+    </ControlTemplate.Triggers>
+   </ControlTemplate></Setter.Value></Setter>
+  </Style>
   <Style x:Key="SidebarNavStyle" TargetType="Button">
    <Setter Property="Background" Value="#101D35"/>
    <Setter Property="Foreground" Value="#D6E3F5"/>
@@ -47,18 +81,7 @@
     </Setter.Value>
    </Setter>
   </Style>
-  <Style TargetType="Button">
-   <Setter Property="Padding" Value="15,9"/>
-   <Setter Property="Margin" Value="0,0,8,0"/>
-   <Setter Property="MinHeight" Value="36"/>
-   <Setter Property="FontSize" Value="13"/>
-   <Setter Property="FontWeight" Value="SemiBold"/>
-   <Setter Property="Background" Value="{DynamicResource SubtleBrush}"/>
-   <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
-   <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushTheme}"/>
-   <Setter Property="BorderThickness" Value="1"/>
-   <Setter Property="Cursor" Value="Hand"/>
-  </Style>
+  <Style TargetType="Button" BasedOn="{StaticResource RoundedActionButtonStyle}"/>
   <Style TargetType="TextBox">
    <Setter Property="Padding" Value="10,8"/>
    <Setter Property="FontSize" Value="13"/>
@@ -525,7 +548,7 @@
           </ComboBox>
          </Grid>
          <Grid Margin="0,0,0,14"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="200"/></Grid.ColumnDefinitions><TextBlock Text="Meeting time format" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}"/><ComboBox x:Name="TimeFormatBox" Grid.Column="1" Width="180" HorizontalAlignment="Right" SelectedIndex="0" SelectionChanged="Settings_Changed"><ComboBoxItem Content="12-hour (AM/PM)"/><ComboBoxItem Content="24-hour"/></ComboBox></Grid>
-         <CheckBox Content="Show Overview summary cards (Today, Next, Week, Zoom)" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Foreground="{DynamicResource TextBrush}" x:Name="ShowDashboardCardsBox"/>
+         <CheckBox Content="Show Overview summary cards (Today, Next, Week, Zoom)" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Foreground="{DynamicResource TextBrush}" x:Name="ShowDashboardCardsBox" Style="{StaticResource SettingsSwitchStyle}"/>
         </StackPanel>
        </Border></StackPanel></ScrollViewer></TabItem>
 <TabItem Header="Calendar &amp; Data" FontSize="13"><ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel Margin="14,0,12,12" MaxWidth="860" HorizontalAlignment="Left"><Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="18" Margin="0"><StackPanel><TextBlock Text="Calendar &amp; Data" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/><TextBlock Text="Import meetings from an ICS calendar export." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,14"/><StackPanel Orientation="Horizontal"><Button Content="Import ICS calendar" Click="ImportIcs_Click" HorizontalAlignment="Left" Padding="14,9"/><Button Content="Reset calendar…" Click="ResetCalendar_Click" Padding="14,9" Margin="8,0,0,0"/></StackPanel></StackPanel></Border></StackPanel></ScrollViewer></TabItem>
@@ -546,8 +569,8 @@
         <StackPanel>
          <TextBlock Text="Notifications &amp; Reminders" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
          <TextBlock Text="Live meeting alerts stay visible until Join Zoom or Acknowledge is clicked." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,18" TextWrapping="Wrap"/>
-         <CheckBox Content="Play a sound with reminders" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,14" x:Name="SoundBox"/>
-         <CheckBox Content="Flash the alert window border" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,18" x:Name="FlashBox"/>
+         <CheckBox Content="Play a sound with reminders" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,14" x:Name="SoundBox" Style="{StaticResource SettingsSwitchStyle}"/>
+         <CheckBox Content="Flash the alert window border" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,18" x:Name="FlashBox" Style="{StaticResource SettingsSwitchStyle}"/>
 
          <Grid Margin="0,0,0,14">
           <Grid.ColumnDefinitions>
@@ -588,7 +611,7 @@
           <TextBox Grid.Column="1" Text="30" LostFocus="Settings_Changed" HorizontalAlignment="Stretch" x:Name="DurationBox"/>
          </Grid>
 
-         <CheckBox Content="Show Daily Meeting Summary popup each morning" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,12" x:Name="DailySummaryEnabledBox"/>
+         <CheckBox Content="Show Daily Meeting Summary popup each morning" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,12" x:Name="DailySummaryEnabledBox" Style="{StaticResource SettingsSwitchStyle}"/>
          <Grid>
           <Grid.ColumnDefinitions>
            <ColumnDefinition Width="*"/>
@@ -616,13 +639,13 @@
           <TextBox x:Name="WorkEndBox" Grid.Column="3" Text="17:00" LostFocus="Settings_Changed" TextAlignment="Center"/>
          </Grid>
          <WrapPanel>
-          <CheckBox x:Name="WorkMonBox" Content="Mon" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Margin="0,0,16,0" Foreground="{DynamicResource TextBrush}"/>
-          <CheckBox x:Name="WorkTueBox" Content="Tue" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Margin="0,0,16,0" Foreground="{DynamicResource TextBrush}"/>
-          <CheckBox x:Name="WorkWedBox" Content="Wed" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Margin="0,0,16,0" Foreground="{DynamicResource TextBrush}"/>
-          <CheckBox x:Name="WorkThuBox" Content="Thu" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Margin="0,0,16,0" Foreground="{DynamicResource TextBrush}"/>
-          <CheckBox x:Name="WorkFriBox" Content="Fri" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Margin="0,0,16,0" Foreground="{DynamicResource TextBrush}"/>
-          <CheckBox x:Name="WorkSatBox" Content="Sat" IsChecked="False" Checked="Settings_Changed" Unchecked="Settings_Changed" Margin="0,0,16,0" Foreground="{DynamicResource TextBrush}"/>
-          <CheckBox x:Name="WorkSunBox" Content="Sun" IsChecked="False" Checked="Settings_Changed" Unchecked="Settings_Changed" Foreground="{DynamicResource TextBrush}"/>
+          <CheckBox x:Name="WorkMonBox" Content="Mon" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Margin="0,0,16,0" Foreground="{DynamicResource TextBrush}" Style="{StaticResource SettingsSwitchStyle}"/>
+          <CheckBox x:Name="WorkTueBox" Content="Tue" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Margin="0,0,16,0" Foreground="{DynamicResource TextBrush}" Style="{StaticResource SettingsSwitchStyle}"/>
+          <CheckBox x:Name="WorkWedBox" Content="Wed" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Margin="0,0,16,0" Foreground="{DynamicResource TextBrush}" Style="{StaticResource SettingsSwitchStyle}"/>
+          <CheckBox x:Name="WorkThuBox" Content="Thu" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Margin="0,0,16,0" Foreground="{DynamicResource TextBrush}" Style="{StaticResource SettingsSwitchStyle}"/>
+          <CheckBox x:Name="WorkFriBox" Content="Fri" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Margin="0,0,16,0" Foreground="{DynamicResource TextBrush}" Style="{StaticResource SettingsSwitchStyle}"/>
+          <CheckBox x:Name="WorkSatBox" Content="Sat" IsChecked="False" Checked="Settings_Changed" Unchecked="Settings_Changed" Margin="0,0,16,0" Foreground="{DynamicResource TextBrush}" Style="{StaticResource SettingsSwitchStyle}"/>
+          <CheckBox x:Name="WorkSunBox" Content="Sun" IsChecked="False" Checked="Settings_Changed" Unchecked="Settings_Changed" Foreground="{DynamicResource TextBrush}" Style="{StaticResource SettingsSwitchStyle}"/>
          </WrapPanel>
         </StackPanel>
        </Border></StackPanel></ScrollViewer></TabItem>
@@ -630,7 +653,7 @@
         <StackPanel>
          <TextBlock Text="Integrations · Stream Deck" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
          <TextBlock Text="Local bridge API for 32-key (8×4) Stream Deck actions, live countdowns, and one-touch Zoom join." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,16" TextWrapping="Wrap"/>
-         <CheckBox Content="Enable local Stream Deck bridge API (127.0.0.1)" IsChecked="False" Checked="Settings_Changed" Unchecked="Settings_Changed" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,14" x:Name="StreamDeckEnabledBox"/>
+         <CheckBox Content="Enable local Stream Deck bridge API (127.0.0.1)" IsChecked="False" Checked="Settings_Changed" Unchecked="Settings_Changed" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,14" x:Name="StreamDeckEnabledBox" Style="{StaticResource SettingsSwitchStyle}"/>
          <Grid Margin="0,0,0,14">
           <Grid.ColumnDefinitions>
            <ColumnDefinition Width="*"/>
@@ -653,7 +676,7 @@
         <StackPanel>
          <TextBlock Text="Startup &amp; Diagnostics" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
          <TextBlock Text="Keep reminders running while you work." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,18" TextWrapping="Wrap"/>
-         <CheckBox Content="Start with Windows (minimised to tray)" Checked="Startup_Changed" Unchecked="Startup_Changed" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,16" x:Name="StartWithWindows"/>
+         <CheckBox Content="Start with Windows (minimised to tray)" Checked="Startup_Changed" Unchecked="Startup_Changed" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,16" x:Name="StartWithWindows" Style="{StaticResource SettingsSwitchStyle}"/>
          <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
           <Button Content="Pause alerts" Click="Pause_Click" MinWidth="135" x:Name="PauseButton"/>
           <Button Content="Test pre-meeting alert" Click="Test_Click" MinWidth="160"/>
