@@ -69,6 +69,7 @@ public partial class MainWindow : Window
     private string viewMode = "Today";
     private string searchQuery = "";
     private bool paused;
+    private bool syncingReminderToggle;
     private readonly HashSet<string> missedKeys = new();
     private readonly Dictionary<string, HashSet<int>> alertStages = new();
     private string lastDailySummaryDate = "";
@@ -85,6 +86,7 @@ public partial class MainWindow : Window
         UpdateSidebarSelection();
         SizeChanged += (_, _) => UpdateResponsiveLayout();
         LoadSettings();
+        paused = settings.RemindersPaused;
         MainTabs.SelectedIndex = 0;
         UpdateSidebarSelection();
         UpdateResponsiveLayout();
@@ -93,12 +95,12 @@ public partial class MainWindow : Window
         RefreshStatus();
         RepeatBox.SelectionChanged += (_, _) => UpdateWeekdaysVisibility();
         UpdateWeekdaysVisibility();
-        tray = new Forms.NotifyIcon { Icon = System.Drawing.SystemIcons.Information, Text = "Meeting Buddy", Visible = true };
+        tray = new Forms.NotifyIcon { Icon = System.Drawing.Icon.ExtractAssociatedIcon(Environment.ProcessPath!) ?? System.Drawing.SystemIcons.Information, Text = "Meeting Buddy", Visible = true };
         var menu = new Forms.ContextMenuStrip();
         menu.Items.Add("Open", null, (_, _) => Dispatcher.Invoke(ShowApp));
         menu.Items.Add("Add meeting", null, (_, _) => Dispatcher.Invoke(() => { ShowApp(); CancelEdit_Click(this, new RoutedEventArgs()); OpenMeetingDialog(); }));
         menu.Items.Add("Daily Summary", null, (_, _) => Dispatcher.Invoke(() => { ShowApp(); ShowDailySummary(); }));
-        menu.Items.Add("Pause / Resume alerts", null, (_, _) => Dispatcher.Invoke(() => { paused = !paused; RefreshStatus(); }));
+        menu.Items.Add("Pause / Resume alerts", null, (_, _) => Dispatcher.Invoke(() => { ToggleReminders(); }));
         menu.Items.Add("Exit", null, (_, _) => Dispatcher.Invoke(ExitApp));
         tray.ContextMenuStrip = menu;
         tray.DoubleClick += (_, _) => Dispatcher.Invoke(ShowApp);
@@ -538,6 +540,7 @@ public partial class MainWindow : Window
         public string WorkdayEnd { get; set; } = "17:00";
         public List<DayOfWeek> WorkingDays { get; set; } = new() { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday };
         public bool StreamDeckEnabled { get; set; } = false;
+        public bool RemindersPaused { get; set; } = false;
         public int StreamDeckPort { get; set; } = 48291;
     }
 
@@ -580,6 +583,7 @@ public partial class MainWindow : Window
         }
 
         Directory.CreateDirectory(Path.GetDirectoryName(settingsPath)!);
+        settings.RemindersPaused = paused;
         File.WriteAllText(settingsPath, JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true }));
     }
 
@@ -728,14 +732,66 @@ public partial class MainWindow : Window
         NextMeetingText.Text = next.Original == null
             ? "No upcoming meetings"
             : $"Next: {next.Original.Title} • {next.When:ddd HH:mm} • starts in {Math.Max(0, (int)Math.Ceiling((next.When!.Value - now).TotalMinutes))} min";
-        StatusText.Text = paused ? "Alerts paused" : "Reminders active";
+        if (StatusText != null) StatusText.Text = paused ? "Paused" : "Active";
+        if (SidebarReminderStatus != null)
+        {
+            SidebarReminderStatus.Text = paused ? "Paused" : "Active";
+            SidebarReminderStatus.Foreground = new System.Windows.Media.SolidColorBrush(paused ? System.Windows.Media.Colors.Orange : System.Windows.Media.Color.FromRgb(134, 239, 172));
+        }
+        if (SidebarRemindersToggle != null)
+        {
+            syncingReminderToggle = true;
+            SidebarRemindersToggle.IsChecked = !paused;
+            syncingReminderToggle = false;
+        }
         PauseButton.Content = paused ? "Resume alerts" : "Pause alerts";
         MissedText.Text = $"Missed reminders: {missedEntries.Count}";
         if (MissedCentreNavButton != null)
             MissedCentreNavButton.Content = $"Missed Meetings ({missedEntries.Count})";
     }
 
-    private void Pause_Click(object sender, RoutedEventArgs e) { paused = !paused; RefreshStatus(); }
+    private void SidebarReminders_Changed(object sender, RoutedEventArgs e)
+    {
+        if (syncingReminderToggle || !IsLoaded || loadingSettings) return;
+        paused = SidebarRemindersToggle.IsChecked != true;
+        settings.RemindersPaused = paused;
+        PersistSettings();
+        RefreshStatus();
+    }
+
+    private void ToggleReminders()
+    {
+        paused = !paused;
+        settings.RemindersPaused = paused;
+        PersistSettings();
+        RefreshStatus();
+    }
+
+    private void Pause_Click(object sender, RoutedEventArgs e) => ToggleReminders();
+
+    private void ResetCalendar_Click(object sender, RoutedEventArgs e)
+    {
+        if (meetings.Count == 0) { MessageBox.Show("Your calendar is already empty.", "Meeting Buddy"); return; }
+        if (MessageBox.Show($"Delete all {meetings.Count} meetings and recurring series? A backup will be saved first. This cannot be undone from within the app.",
+                "Reset calendar", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
+        try
+        {
+            var backupFolder = Path.Combine(Path.GetDirectoryName(dataPath)!, "Backups");
+            Directory.CreateDirectory(backupFolder);
+            var backup = Path.Combine(backupFolder, $"reset-{DateTime.Now:yyyyMMdd-HHmmss}.json");
+            File.WriteAllText(backup, JsonSerializer.Serialize(meetings.ToArray(), new JsonSerializerOptions { WriteIndented = true }));
+            meetings.Clear();
+            snoozes.Clear();
+            missedEntries.Clear();
+            missedKeys.Clear();
+            alertStages.Clear();
+            Save();
+            RefreshUpcoming();
+            RefreshStatus();
+            MessageBox.Show($"Calendar reset. Backup saved to:\\n{backup}", "Meeting Buddy");
+        }
+        catch (Exception ex) { MessageBox.Show($"Could not reset calendar: {ex.Message}", "Meeting Buddy", MessageBoxButton.OK, MessageBoxImage.Error); }
+    }
     private bool calendarMode;
     private DateTime visibleMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
 
