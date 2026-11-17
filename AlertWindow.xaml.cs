@@ -60,13 +60,32 @@ public partial class AlertWindow : Window
         int minutesUntilStart = (int)Math.Floor((meetingStart - DateTime.Now).TotalMinutes);
         if (!isLiveMeeting && minutesUntilStart >= 1 && onSnooze != null)
         {
-            int snoozeMins = Math.Min(2, minutesUntilStart);
-            SnoozeButton.Tag = snoozeMins;
-            SnoozeButton.Content = snoozeMins == 1 ? "Snooze 1 min" : $"Snooze {snoozeMins} min";
-            SnoozeButton.Visibility = Visibility.Visible;
+            foreach (int minutes in new[] { 1, 2, 5, 10, 15 })
+            {
+                if (minutes >= minutesUntilStart) continue; // Snooze must trigger before the meeting.
+                SnoozeDurationBox.Items.Add(new System.Windows.Controls.ComboBoxItem
+                {
+                    Content = $"{minutes} min",
+                    Tag = minutes,
+                    Foreground = System.Windows.Media.Brushes.White,
+                    Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(48, 59, 77))
+                });
+            }
+            if (SnoozeDurationBox.Items.Count > 0)
+            {
+                SnoozeDurationBox.SelectedIndex = Math.Min(1, SnoozeDurationBox.Items.Count - 1);
+                SnoozeDurationBox.Visibility = Visibility.Visible;
+                SnoozeButton.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                SnoozeDurationBox.Visibility = Visibility.Collapsed;
+                SnoozeButton.Visibility = Visibility.Collapsed;
+            }
         }
         else
         {
+            SnoozeDurationBox.Visibility = Visibility.Collapsed;
             SnoozeButton.Visibility = Visibility.Collapsed;
         }
 
@@ -175,7 +194,7 @@ public partial class AlertWindow : Window
     private void Snooze_Click(object sender, RoutedEventArgs e)
     {
         if (isLiveMeeting) return;
-        int mins = SnoozeButton.Tag is int m ? m : 2;
+        int mins = (SnoozeDurationBox.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Tag is int m ? m : 1;
         onSnooze?.Invoke(mins);
         canClose = true;
         Close();
