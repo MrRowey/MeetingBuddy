@@ -28,7 +28,8 @@
 
    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
     <Button x:Name="JoinButton" Content="Join Zoom" Click="Join_Click" Visibility="Collapsed" Background="#2563EB" Foreground="White" BorderBrush="#2563EB" Padding="16,9" Margin="0,0,10,0"/>
-    <Button x:Name="SnoozeButton" Content="Snooze 2 min" Click="Snooze_Click" Padding="14,9" Margin="0,0,10,0" Background="#303B4D" Foreground="#F2F5FA" BorderBrush="#64748B" BorderThickness="1"/>
+    <ComboBox x:Name="SnoozeDurationBox" Width="112" Height="37" Margin="0,0,8,0" VerticalAlignment="Center" Background="#303B4D" Foreground="#F2F5FA" BorderBrush="#64748B" ToolTip="Choose snooze duration" Visibility="Collapsed"/>
+    <Button x:Name="SnoozeButton" Content="Snooze" Click="Snooze_Click" Padding="14,9" Margin="0,0,10,0" Background="#303B4D" Foreground="#F2F5FA" BorderBrush="#64748B" BorderThickness="1"/>
     <Button x:Name="AcknowledgeButton" Content="Acknowledge" Click="Acknowledge_Click" Visibility="Collapsed" Padding="14,9" Margin="0,0,10,0" Background="#303B4D" Foreground="#F2F5FA" BorderBrush="#64748B" BorderThickness="1"/>
     <Button x:Name="DismissButton" Content="Dismiss" Click="Dismiss_Click" Background="#2563EB" Foreground="White" BorderBrush="#2563EB" Padding="16,9" Margin="0"/>
    </StackPanel>
