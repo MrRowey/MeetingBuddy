@@ -664,7 +664,7 @@
 
   <!-- OVERLAY 1: ADD / EDIT MEETING DIALOG -->
   <Grid x:Name="MeetingDialogOverlay" Grid.ColumnSpan="2" Panel.ZIndex="50" Visibility="Collapsed" Background="#B9000000">
-   <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="16,20" VerticalAlignment="Center" MaxHeight="740" Width="720">
+   <Viewbox Stretch="Uniform" StretchDirection="DownOnly" Margin="16,16" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="720">
     <Border x:Name="EditorCard" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="16" Padding="28" Margin="0" VerticalAlignment="Stretch" MaxWidth="690" HorizontalAlignment="Center" Width="690">
      <StackPanel>
       <Button Content="✕  Close" Click="CloseMeetingDialog_Click" HorizontalAlignment="Right" Margin="0,0,0,10" Background="{DynamicResource SubtleBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrushTheme}"/>
@@ -783,7 +783,7 @@
       <Button x:Name="CancelEditButton" Content="Cancel editing" Click="CancelEdit_Click" Visibility="Collapsed" HorizontalAlignment="Right" Margin="0,8,0,0" Width="0" Height="0" IsHitTestVisible="False"/>
      </StackPanel>
     </Border>
-   </ScrollViewer>
+   </Viewbox>
   </Grid>
 
   <!-- OVERLAY 2: MEETING DETAILS POPUP -->
