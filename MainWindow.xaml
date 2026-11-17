@@ -584,6 +584,10 @@
           <TextBox x:Name="ProfileWorkplaceBox" Height="38" MaxLength="100" Margin="0,0,0,14" LostFocus="Profile_Changed"/>
           <TextBlock Text="JOB TITLE (OPTIONAL)" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>
           <TextBox x:Name="ProfileJobTitleBox" Height="38" MaxLength="100" Margin="0,0,0,14" LostFocus="Profile_Changed"/>
+          <TextBlock Text="MEETING PLATFORMS" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,4,0,8"/>
+          <CheckBox x:Name="PlatformTeamsBox" Content="Microsoft Teams" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,8"/>
+          <CheckBox x:Name="PlatformZoomBox" Content="Zoom" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,8"/>
+          <CheckBox x:Name="PlatformMeetBox" Content="Google Meet" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,14"/>
           <Button Content="Save profile" HorizontalAlignment="Left" Padding="18,9" Click="SaveProfile_Click"/>
          </StackPanel>
         </Border>
