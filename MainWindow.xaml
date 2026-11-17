@@ -775,7 +775,8 @@
 
       <StackPanel Margin="0,0,0,16">
        <TextBlock Text="EVENT COLOUR" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,7"/>
-       <ComboBox x:Name="EventColorBox" Height="40" Width="280" HorizontalAlignment="Left" Foreground="{DynamicResource InputTextBrush}" Background="{DynamicResource InputBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" SelectedIndex="0" SelectionChanged="EventColor_SelectionChanged">
+       <Grid Width="280" Height="40" HorizontalAlignment="Left">
+        <ComboBox x:Name="EventColorBox" Height="40" Width="280" Padding="32,8" HorizontalAlignment="Left" Foreground="{DynamicResource InputTextBrush}" Background="{DynamicResource InputBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" SelectedIndex="0" SelectionChanged="EventColor_SelectionChanged">
         <ComboBoxItem Content="●  Blue · General" Tag="#2563EB" Foreground="#2563EB"/>
         <ComboBoxItem Content="●  Green · Team" Tag="#059669" Foreground="#059669"/>
         <ComboBoxItem Content="●  Purple · Projects" Tag="#7C3AED" Foreground="#7C3AED"/>
@@ -783,7 +784,8 @@
         <ComboBoxItem Content="●  Red · Urgent" Tag="#C2414B" Foreground="#C2414B"/>
         <ComboBoxItem Content="●  Teal · Customers" Tag="#087E8B" Foreground="#087E8B"/>
        </ComboBox>
-       <Border x:Name="SelectedEventColourPreview" Width="14" Height="14" CornerRadius="7" Background="#2563EB" HorizontalAlignment="Left" Margin="5,6,0,0" ToolTip="Selected meeting colour"/>
+        <Border x:Name="SelectedEventColourPreview" Width="14" Height="14" CornerRadius="7" Background="#2563EB" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="12,0,0,0" IsHitTestVisible="False" ToolTip="Selected meeting colour"/>
+       </Grid>
       </StackPanel>
 
       <Grid Margin="0,0,0,10">
