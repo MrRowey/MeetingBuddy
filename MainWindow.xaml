@@ -663,12 +663,12 @@
       <StackPanel Margin="0,0,0,16">
        <TextBlock Text="EVENT COLOUR" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,7"/>
        <ComboBox x:Name="EventColorBox" Height="40" Width="280" HorizontalAlignment="Left" Foreground="{DynamicResource InputTextBrush}" Background="{DynamicResource InputBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" SelectedIndex="0">
-        <ComboBoxItem Content="●  Blue · General" Tag="#2563EB"/>
-        <ComboBoxItem Content="●  Green · Team" Tag="#059669"/>
-        <ComboBoxItem Content="●  Purple · Projects" Tag="#7C3AED"/>
-        <ComboBoxItem Content="●  Orange · Important" Tag="#C76A13"/>
-        <ComboBoxItem Content="●  Red · Urgent" Tag="#C2414B"/>
-        <ComboBoxItem Content="●  Teal · Customers" Tag="#087E8B"/>
+        <ComboBoxItem Content="●  Blue · General" Tag="#2563EB" Foreground="#2563EB"/>
+        <ComboBoxItem Content="●  Green · Team" Tag="#059669" Foreground="#059669"/>
+        <ComboBoxItem Content="●  Purple · Projects" Tag="#7C3AED" Foreground="#7C3AED"/>
+        <ComboBoxItem Content="●  Orange · Important" Tag="#C76A13" Foreground="#C76A13"/>
+        <ComboBoxItem Content="●  Red · Urgent" Tag="#C2414B" Foreground="#C2414B"/>
+        <ComboBoxItem Content="●  Teal · Customers" Tag="#087E8B" Foreground="#087E8B"/>
        </ComboBox>
       </StackPanel>
 
