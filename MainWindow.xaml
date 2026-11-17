@@ -485,13 +485,10 @@
 
     <!-- TAB 2: PREFERENCES -->
     <TabItem Header="Settings" FontSize="14" Padding="15,9" Foreground="{DynamicResource TextBrush}">
-     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-      <StackPanel Margin="0,0,12,12">
-       <TextBlock Text="Settings" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,5"/>
-       <TextBlock Text="Personalise your workspace, working hours, and persistent reminders." Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,22"/>
-
-       <!-- Appearance & Dashboard -->
-       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="16" Margin="0,0,0,10">
+    <Grid Margin="0,0,0,8">
+     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+     <StackPanel Margin="4,0,0,14"><TextBlock Text="Settings" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/><TextBlock Text="Manage your workspace preferences" Foreground="{DynamicResource MutedBrush}" FontSize="12"/></StackPanel>
+     <TabControl Grid.Row="1" TabStripPlacement="Left" Background="Transparent" BorderThickness="0"><TabItem Header="Appearance" FontSize="13" Padding="12,10" Foreground="{DynamicResource TextBrush}"><ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><Grid Margin="14,0,12,12"><Grid.ColumnDefinitions><ColumnDefinition Width="*" MaxWidth="860"/></Grid.ColumnDefinitions><Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="18" Margin="0">
         <StackPanel>
          <TextBlock Text="Appearance" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
          <TextBlock Text="Choose how Meeting Buddy looks and which dashboard widgets appear." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,18" TextWrapping="Wrap"/>
@@ -509,12 +506,9 @@
          <Grid Margin="0,0,0,14"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="200"/></Grid.ColumnDefinitions><TextBlock Text="Meeting time format" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}"/><ComboBox x:Name="TimeFormatBox" Grid.Column="1" Width="180" HorizontalAlignment="Right" SelectedIndex="0" SelectionChanged="Settings_Changed"><ComboBoxItem Content="12-hour (AM/PM)"/><ComboBoxItem Content="24-hour"/></ComboBox></Grid>
          <CheckBox Content="Show Overview summary cards (Today, Next, Week, Zoom)" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Foreground="{DynamicResource TextBrush}" x:Name="ShowDashboardCardsBox"/>
         </StackPanel>
-       </Border>
-
-       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="16" Margin="0,0,0,10"><StackPanel><TextBlock Text="Calendar &amp; Data" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/><TextBlock Text="Import meetings from an ICS calendar export." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,14"/><StackPanel Orientation="Horizontal"><Button Content="Import ICS calendar" Click="ImportIcs_Click" HorizontalAlignment="Left" Padding="14,9"/><Button Content="Reset calendar…" Click="ResetCalendar_Click" Padding="14,9" Margin="8,0,0,0"/></StackPanel></StackPanel></Border>
-
-        <!-- Time off: notification suppression -->
-        <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="16" Margin="0,0,0,10">
+       </Border></Grid></ScrollViewer></TabItem>
+<TabItem Header="Calendar &amp; Data" FontSize="13" Padding="12,10" Foreground="{DynamicResource TextBrush}"><ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><Grid Margin="14,0,12,12"><Grid.ColumnDefinitions><ColumnDefinition Width="*" MaxWidth="860"/></Grid.ColumnDefinitions><Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="18" Margin="0"><StackPanel><TextBlock Text="Calendar &amp; Data" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/><TextBlock Text="Import meetings from an ICS calendar export." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,14"/><StackPanel Orientation="Horizontal"><Button Content="Import ICS calendar" Click="ImportIcs_Click" HorizontalAlignment="Left" Padding="14,9"/><Button Content="Reset calendar…" Click="ResetCalendar_Click" Padding="14,9" Margin="8,0,0,0"/></StackPanel></StackPanel></Border></Grid></ScrollViewer></TabItem>
+<TabItem Header="Time Off" FontSize="13" Padding="12,10" Foreground="{DynamicResource TextBrush}"><ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><Grid Margin="14,0,12,12"><Grid.ColumnDefinitions><ColumnDefinition Width="*" MaxWidth="860"/></Grid.ColumnDefinitions><Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="18" Margin="0">
          <StackPanel>
           <TextBlock Text="Time Off &amp; Availability" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
           <TextBlock Text="Suppress meeting reminders and missed alerts during annual leave." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,12"/>
@@ -526,10 +520,8 @@
           <ListBox x:Name="PtoList" Margin="0,8,0,4" MaxHeight="110" Background="Transparent" Foreground="{DynamicResource TextBrush}"/>
           <Button Content="Remove selected time off" Click="RemovePto_Click" HorizontalAlignment="Left"/>
          </StackPanel>
-        </Border>
-
-        <!-- Reminders, Position & Custom Sound -->
-       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="16" Margin="0,0,0,10">
+        </Border></Grid></ScrollViewer></TabItem>
+<TabItem Header="Notifications" FontSize="13" Padding="12,10" Foreground="{DynamicResource TextBrush}"><ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><Grid Margin="14,0,12,12"><Grid.ColumnDefinitions><ColumnDefinition Width="*" MaxWidth="860"/></Grid.ColumnDefinitions><Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="18" Margin="0">
         <StackPanel>
          <TextBlock Text="Notifications &amp; Reminders" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
          <TextBlock Text="Live meeting alerts stay visible until Join Zoom or Acknowledge is clicked." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,18" TextWrapping="Wrap"/>
@@ -585,10 +577,8 @@
           <TextBox Grid.Column="1" Text="08:30" LostFocus="Settings_Changed" HorizontalAlignment="Stretch" x:Name="DailySummaryTimeBox"/>
          </Grid>
         </StackPanel>
-       </Border>
-
-       <!-- Working Hours & Working Days -->
-       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="16" Margin="0,0,0,10">
+       </Border></Grid></ScrollViewer></TabItem>
+<TabItem Header="Work Schedule" FontSize="13" Padding="12,10" Foreground="{DynamicResource TextBrush}"><ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><Grid Margin="14,0,12,12"><Grid.ColumnDefinitions><ColumnDefinition Width="*" MaxWidth="860"/></Grid.ColumnDefinitions><Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="18" Margin="0">
         <StackPanel>
          <TextBlock Text="Work Schedule" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
          <TextBlock Text="Used for ICS import filtering and active reminder scheduling." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,16" TextWrapping="Wrap"/>
@@ -614,10 +604,8 @@
           <CheckBox x:Name="WorkSunBox" Content="Sun" IsChecked="False" Checked="Settings_Changed" Unchecked="Settings_Changed" Foreground="{DynamicResource TextBrush}"/>
          </WrapPanel>
         </StackPanel>
-       </Border>
-
-              <!-- Stream Deck XL Integration -->
-       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="16" Margin="0,0,0,10">
+       </Border></Grid></ScrollViewer></TabItem>
+<TabItem Header="Integrations" FontSize="13" Padding="12,10" Foreground="{DynamicResource TextBrush}"><ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><Grid Margin="14,0,12,12"><Grid.ColumnDefinitions><ColumnDefinition Width="*" MaxWidth="860"/></Grid.ColumnDefinitions><Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="18" Margin="0">
         <StackPanel>
          <TextBlock Text="Integrations · Stream Deck" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
          <TextBlock Text="Local bridge API for 32-key (8×4) Stream Deck actions, live countdowns, and one-touch Zoom join." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,16" TextWrapping="Wrap"/>
@@ -639,10 +627,8 @@
           <Button Grid.Column="1" Content="Bridge Info &amp; Setup" Click="TestStreamDeckBridge_Click" MinWidth="150" Margin="0"/>
          </Grid>
         </StackPanel>
-       </Border>
-
-       <!-- Startup & Testing -->
-       <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="16" Margin="0,0,0,10">
+       </Border></Grid></ScrollViewer></TabItem>
+<TabItem Header="General" FontSize="13" Padding="12,10" Foreground="{DynamicResource TextBrush}"><ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><Grid Margin="14,0,12,12"><Grid.ColumnDefinitions><ColumnDefinition Width="*" MaxWidth="860"/></Grid.ColumnDefinitions><Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="18" Margin="0">
         <StackPanel>
          <TextBlock Text="Startup &amp; Diagnostics" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
          <TextBlock Text="Keep reminders running while you work." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,18" TextWrapping="Wrap"/>
@@ -655,10 +641,9 @@
          </StackPanel>
          <TextBlock Text="Missed reminders: 0" Foreground="{DynamicResource MutedBrush}" x:Name="MissedText"/>
         </StackPanel>
-       </Border>
-      </StackPanel>
-     </ScrollViewer>
-    </TabItem>
+       </Border></Grid></ScrollViewer></TabItem></TabControl>
+    </Grid>
+   </TabItem>
    </TabControl>
   </Grid>
 
