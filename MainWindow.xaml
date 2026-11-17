@@ -2,6 +2,27 @@
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="MeetingBuddy.MainWindow" Title="Meeting Buddy" Width="1180" Height="830" MinWidth="760" MinHeight="560" Background="{DynamicResource PageBrush}" Foreground="{DynamicResource TextBrush}" FontFamily="Segoe UI Variable, Segoe UI" WindowStartupLocation="CenterScreen" UseLayoutRounding="True" PreviewKeyDown="Window_PreviewKeyDown">
  <Window.Resources>
   <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+  <Style x:Key="SettingsCategoryTabStyle" TargetType="TabItem">
+   <Setter Property="Foreground" Value="#CBD5E1"/>
+   <Setter Property="Background" Value="#172235"/>
+   <Setter Property="Padding" Value="14,12"/>
+   <Setter Property="Margin" Value="0,0,0,5"/>
+   <Setter Property="MinWidth" Value="174"/>
+   <Setter Property="HorizontalContentAlignment" Value="Left"/>
+   <Setter Property="Template">
+    <Setter.Value>
+     <ControlTemplate TargetType="TabItem">
+      <Border x:Name="CategorySurface" Background="{TemplateBinding Background}" CornerRadius="7" Margin="{TemplateBinding Margin}" Padding="{TemplateBinding Padding}">
+       <ContentPresenter ContentSource="Header" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+      </Border>
+      <ControlTemplate.Triggers>
+       <Trigger Property="IsSelected" Value="True"><Setter TargetName="CategorySurface" Property="Background" Value="#29466D"/><Setter Property="Foreground" Value="White"/></Trigger>
+       <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="CategorySurface" Property="BorderBrush" Value="#60A5FA"/><Setter TargetName="CategorySurface" Property="BorderThickness" Value="1"/></Trigger>
+      </ControlTemplate.Triggers>
+     </ControlTemplate>
+    </Setter.Value>
+   </Setter>
+  </Style>
   <Style x:Key="SidebarNavStyle" TargetType="Button">
    <Setter Property="Background" Value="#101D35"/>
    <Setter Property="Foreground" Value="#D6E3F5"/>
@@ -488,7 +509,7 @@
     <Grid Margin="0,0,0,8">
      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
      <StackPanel Margin="4,0,0,14"><TextBlock Text="Settings" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/><TextBlock Text="Manage your workspace preferences" Foreground="{DynamicResource MutedBrush}" FontSize="12"/></StackPanel>
-     <TabControl Grid.Row="1" TabStripPlacement="Left" Background="Transparent" BorderThickness="0"><TabItem Header="Appearance" FontSize="13" Padding="12,10" Foreground="{DynamicResource TextBrush}"><ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><Grid Margin="14,0,12,12"><Grid.ColumnDefinitions><ColumnDefinition Width="*" MaxWidth="860"/></Grid.ColumnDefinitions><Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="18" Margin="0">
+     <TabControl Grid.Row="1" TabStripPlacement="Left" Background="Transparent" BorderThickness="0" ItemContainerStyle="{StaticResource SettingsCategoryTabStyle}"><TabItem Header="Appearance" FontSize="13"><ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel Margin="14,0,12,12" MaxWidth="860" HorizontalAlignment="Left"><Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="18" Margin="0">
         <StackPanel>
          <TextBlock Text="Appearance" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
          <TextBlock Text="Choose how Meeting Buddy looks and which dashboard widgets appear." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,18" TextWrapping="Wrap"/>
@@ -506,7 +527,7 @@
          <Grid Margin="0,0,0,14"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="200"/></Grid.ColumnDefinitions><TextBlock Text="Meeting time format" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}"/><ComboBox x:Name="TimeFormatBox" Grid.Column="1" Width="180" HorizontalAlignment="Right" SelectedIndex="0" SelectionChanged="Settings_Changed"><ComboBoxItem Content="12-hour (AM/PM)"/><ComboBoxItem Content="24-hour"/></ComboBox></Grid>
          <CheckBox Content="Show Overview summary cards (Today, Next, Week, Zoom)" IsChecked="True" Checked="Settings_Changed" Unchecked="Settings_Changed" Foreground="{DynamicResource TextBrush}" x:Name="ShowDashboardCardsBox"/>
         </StackPanel>
-       </Border></Grid></ScrollViewer></TabItem>
+       </Border></StackPanel></ScrollViewer></TabItem>
 <TabItem Header="Calendar &amp; Data" FontSize="13" Padding="12,10" Foreground="{DynamicResource TextBrush}"><ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><Grid Margin="14,0,12,12"><Grid.ColumnDefinitions><ColumnDefinition Width="*" MaxWidth="860"/></Grid.ColumnDefinitions><Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="18" Margin="0"><StackPanel><TextBlock Text="Calendar &amp; Data" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/><TextBlock Text="Import meetings from an ICS calendar export." Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,14"/><StackPanel Orientation="Horizontal"><Button Content="Import ICS calendar" Click="ImportIcs_Click" HorizontalAlignment="Left" Padding="14,9"/><Button Content="Reset calendar…" Click="ResetCalendar_Click" Padding="14,9" Margin="8,0,0,0"/></StackPanel></StackPanel></Border></Grid></ScrollViewer></TabItem>
 <TabItem Header="Time Off" FontSize="13" Padding="12,10" Foreground="{DynamicResource TextBrush}"><ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><Grid Margin="14,0,12,12"><Grid.ColumnDefinitions><ColumnDefinition Width="*" MaxWidth="860"/></Grid.ColumnDefinitions><Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrushTheme}" BorderThickness="1" CornerRadius="12" Padding="18" Margin="0">
          <StackPanel>
