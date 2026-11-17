@@ -83,9 +83,11 @@ public partial class MainWindow : Window
         MissedList.ItemsSource = missedEntries;
         MainTabs.SelectionChanged += (_, e) => { if (ReferenceEquals(e.Source, MainTabs)) UpdateSidebarSelection(); };
         UpdateSidebarSelection();
+        SizeChanged += (_, _) => UpdateResponsiveLayout();
         LoadSettings();
         MainTabs.SelectedIndex = 0;
         UpdateSidebarSelection();
+        UpdateResponsiveLayout();
         ViewBox.SelectedIndex = 0;
         ApplyTheme();
         RefreshStatus();
@@ -433,14 +435,21 @@ public partial class MainWindow : Window
         UpdateSidebarSelection();
     }
 
+    private void UpdateResponsiveLayout()
+    {
+        if (SidebarColumn == null) return;
+        SidebarColumn.Width = new GridLength(ActualWidth < 960 ? 175 : 220);
+    }
+
     private void UpdateSidebarSelection()
     {
+        if (OverviewNavButton == null || PreferencesNavButton == null) return;
         var buttons = new[] { OverviewNavButton, PreferencesNavButton };
         for (int i = 0; i < buttons.Length; i++)
         {
             bool active = MainTabs.SelectedIndex == (i == 0 ? 0 : 2);
             buttons[i].Background = new System.Windows.Media.SolidColorBrush(
-                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(active ? (settings.DarkMode ? "#29466D" : "#243C60") : (settings.DarkMode ? "#101722" : "#101D35")));
+                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(active ? "#29466D" : (settings.DarkMode ? "#101722" : "#101D35")));
             buttons[i].Foreground = new System.Windows.Media.SolidColorBrush(
                 (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(active ? "#FFFFFF" : "#D6E3F5"));
         }
@@ -528,7 +537,7 @@ public partial class MainWindow : Window
         public string WorkdayStart { get; set; } = "08:00";
         public string WorkdayEnd { get; set; } = "17:00";
         public List<DayOfWeek> WorkingDays { get; set; } = new() { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday };
-        public bool StreamDeckEnabled { get; set; } = true;
+        public bool StreamDeckEnabled { get; set; } = false;
         public int StreamDeckPort { get; set; } = 48291;
     }
 
