@@ -1,0 +1,50 @@
+name: Test Windows Build
+
+on:
+  push:
+    branches: [Develop]
+    paths:
+      - '**/*.cs'
+      - '**/*.xaml'
+      - '**/*.csproj'
+      - 'Assets/**'
+      - '.github/workflows/test-windows-build.yml'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-build-test-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Windows app (.NET 10)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Set up .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore dependencies
+        run: dotnet restore ./MeetingBuddy.csproj
+      - name: Build application
+        run: dotnet build ./MeetingBuddy.csproj --configuration Release --no-restore --warnaserror
+      - name: Verify publish output
+        shell: pwsh
+        run: |
+          dotnet publish ./MeetingBuddy.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false -o ./publish
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path ./publish/MeetingBuddy.exe)) { throw 'Publish did not produce MeetingBuddy.exe' }
+      - name: Upload test executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: MeetingBuddy-Develop-Windows
+          path: publish/MeetingBuddy.exe
+          if-no-files-found: error
+          retention-days: 7
