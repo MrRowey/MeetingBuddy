@@ -558,6 +558,9 @@ public partial class MainWindow : Window
         ProfileNameBox.Text = settings.ProfileName ?? "";
         ProfileWorkplaceBox.Text = settings.ProfileWorkplace ?? "";
         ProfileJobTitleBox.Text = settings.ProfileJobTitle ?? "";
+        PlatformTeamsBox.IsChecked = settings.PlatformTeams;
+        PlatformZoomBox.IsChecked = settings.PlatformZoom;
+        PlatformMeetBox.IsChecked = settings.PlatformMeet;
         UpdateWorkspaceHeading();
         StartWithWindows.IsChecked = settings.StartWithWindows;
         SoundBox.IsChecked = settings.Sound;
@@ -597,6 +600,9 @@ public partial class MainWindow : Window
         public string ProfileName { get; set; } = "";
         public string ProfileWorkplace { get; set; } = "";
         public string ProfileJobTitle { get; set; } = "";
+        public bool PlatformTeams { get; set; } = true;
+        public bool PlatformZoom { get; set; } = true;
+        public bool PlatformMeet { get; set; } = true;
         public bool StartWithWindows { get; set; }
         public bool Sound { get; set; } = true;
         public bool Flash { get; set; } = true;
@@ -624,6 +630,9 @@ public partial class MainWindow : Window
         settings.ProfileName = ProfileNameBox?.Text.Trim() ?? "";
         settings.ProfileWorkplace = ProfileWorkplaceBox?.Text.Trim() ?? "";
         settings.ProfileJobTitle = ProfileJobTitleBox?.Text.Trim() ?? "";
+        settings.PlatformTeams = PlatformTeamsBox?.IsChecked == true;
+        settings.PlatformZoom = PlatformZoomBox?.IsChecked == true;
+        settings.PlatformMeet = PlatformMeetBox?.IsChecked == true;
         settings.StartWithWindows = StartWithWindows.IsChecked == true;
         settings.Sound = SoundBox.IsChecked == true;
         settings.Flash = FlashBox.IsChecked == true;
@@ -682,7 +691,7 @@ public partial class MainWindow : Window
         var dialog = new Window
         {
             Title = "Welcome to Meeting Buddy",
-            Width = 460, Height = 480, MinWidth = 420,
+            Width = 460, Height = 590, MinWidth = 420,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             Owner = this, ResizeMode = ResizeMode.NoResize,
             Background = new System.Windows.Media.SolidColorBrush(
@@ -720,6 +729,16 @@ public partial class MainWindow : Window
         var name = AddField("Your name", settings.ProfileName);
         var workplace = AddField("Workplace", settings.ProfileWorkplace);
         var job = AddField("Job title (optional)", settings.ProfileJobTitle);
+        panel.Children.Add(new System.Windows.Controls.TextBlock
+        {
+            Text = "Meeting platforms", Margin = new Thickness(0, 0, 0, 7)
+        });
+        var teams = new System.Windows.Controls.CheckBox { Content = "Microsoft Teams", IsChecked = settings.PlatformTeams, Margin = new Thickness(0, 0, 0, 5) };
+        var zoom = new System.Windows.Controls.CheckBox { Content = "Zoom", IsChecked = settings.PlatformZoom, Margin = new Thickness(0, 0, 0, 5) };
+        var meet = new System.Windows.Controls.CheckBox { Content = "Google Meet", IsChecked = settings.PlatformMeet, Margin = new Thickness(0, 0, 0, 9) };
+        panel.Children.Add(teams);
+        panel.Children.Add(zoom);
+        panel.Children.Add(meet);
         var save = new System.Windows.Controls.Button
         {
             Content = "Finish setup", Height = 40, Margin = new Thickness(0, 6, 0, 8),
@@ -739,6 +758,9 @@ public partial class MainWindow : Window
             ProfileNameBox.Text = name.Text.Trim();
             ProfileWorkplaceBox.Text = workplace.Text.Trim();
             ProfileJobTitleBox.Text = job.Text.Trim();
+            PlatformTeamsBox.IsChecked = teams.IsChecked;
+            PlatformZoomBox.IsChecked = zoom.IsChecked;
+            PlatformMeetBox.IsChecked = meet.IsChecked;
             PersistSettings();
             UpdateWorkspaceHeading();
             dialog.Close();
