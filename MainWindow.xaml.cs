@@ -986,6 +986,8 @@ public partial class MainWindow : Window
         catch (Exception ex) { MessageBox.Show($"Could not reset calendar: {ex.Message}", "Meeting Buddy", MessageBoxButton.OK, MessageBoxImage.Error); }
     }
     private bool calendarMode;
+    private bool weeklyCalendarMode;
+    private DateTime visibleWeek = DateTime.Today;
     private DateTime visibleMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
 
     private void ListView_Click(object sender, RoutedEventArgs e)
@@ -1007,12 +1009,32 @@ public partial class MainWindow : Window
         RefreshOverviewUi();
     }
 
-    private void CalendarPrevious_Click(object sender, RoutedEventArgs e) { visibleMonth = visibleMonth.AddMonths(-1); RenderMonth(); }
-    private void CalendarNext_Click(object sender, RoutedEventArgs e) { visibleMonth = visibleMonth.AddMonths(1); RenderMonth(); }
+    private void CalendarModeToggle_Click(object sender, RoutedEventArgs e)
+    {
+        weeklyCalendarMode = !weeklyCalendarMode;
+        if (weeklyCalendarMode) visibleWeek = DateTime.Today;
+        else visibleMonth = new DateTime(visibleWeek.Year, visibleWeek.Month, 1);
+        CalendarModeToggle.Content = weeklyCalendarMode ? "Month view" : "Week view";
+        RenderMonth();
+    }
+
+    private void CalendarPrevious_Click(object sender, RoutedEventArgs e)
+    {
+        if (weeklyCalendarMode) visibleWeek = visibleWeek.AddDays(-7);
+        else visibleMonth = visibleMonth.AddMonths(-1);
+        RenderMonth();
+    }
+    private void CalendarNext_Click(object sender, RoutedEventArgs e)
+    {
+        if (weeklyCalendarMode) visibleWeek = visibleWeek.AddDays(7);
+        else visibleMonth = visibleMonth.AddMonths(1);
+        RenderMonth();
+    }
 
     private void CalendarToday_Click(object sender, RoutedEventArgs e)
     {
         visibleMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        visibleWeek = DateTime.Today;
         RenderMonth();
     }
 
@@ -1051,17 +1073,21 @@ public partial class MainWindow : Window
     private void RenderMonth()
     {
         if (!calendarMode || MonthCells == null) return;
-        CalendarMonthLabel.Text = visibleMonth.ToString("MMMM yyyy", CultureInfo.GetCultureInfo("en-GB"));
+        var anchor = weeklyCalendarMode ? visibleWeek : visibleMonth;
+        var first = anchor.AddDays(-((int)anchor.DayOfWeek + 6) % 7);
+        CalendarMonthLabel.Text = weeklyCalendarMode
+            ? $"{first:dd MMM} – {first.AddDays(6):dd MMM yyyy}"
+            : visibleMonth.ToString("MMMM yyyy", CultureInfo.GetCultureInfo("en-GB"));
+        MonthCells.Rows = weeklyCalendarMode ? 1 : 6;
         MonthCells.Children.Clear();
-        var first = visibleMonth.AddDays(-((int)visibleMonth.DayOfWeek + 6) % 7);
         var textBrush = (System.Windows.Media.Brush)System.Windows.Application.Current.Resources["TextBrush"];
         var muted = (System.Windows.Media.Brush)System.Windows.Application.Current.Resources["MutedBrush"];
         var borderBrush = (System.Windows.Media.Brush)System.Windows.Application.Current.Resources["BorderBrushTheme"];
         var accent = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(37, 99, 235));
-        for (int i = 0; i < 42; i++)
+        for (int i = 0; i < (weeklyCalendarMode ? 7 : 42); i++)
         {
             var day = first.AddDays(i);
-            var currentMonth = day.Month == visibleMonth.Month;
+            var currentMonth = weeklyCalendarMode || day.Month == visibleMonth.Month;
             var compact = MonthCells.ActualWidth > 0 && MonthCells.ActualWidth < 780;
             var panel = new System.Windows.Controls.StackPanel { Margin = new Thickness(compact ? 2 : 5) };
             var dayButton = new System.Windows.Controls.Button
@@ -1080,7 +1106,7 @@ public partial class MainWindow : Window
             dayButton.Click += CalendarDay_Click;
             panel.Children.Add(dayButton);
             var occurrences = meetings.Where(m => OccursOn(m, day)).OrderBy(m => m.Start.TimeOfDay).ToList();
-            if (compact && occurrences.Count > 0)
+            if (compact && !weeklyCalendarMode && occurrences.Count > 0)
             {
                 var countButton = new System.Windows.Controls.Button
                 {
@@ -1094,7 +1120,7 @@ public partial class MainWindow : Window
                 countButton.Click += CalendarDay_Click;
                 panel.Children.Add(countButton);
             }
-            foreach (var meeting in (compact ? Enumerable.Empty<Meeting>() : occurrences.Take(3)))
+            foreach (var meeting in (compact && !weeklyCalendarMode ? Enumerable.Empty<Meeting>() : occurrences.Take(weeklyCalendarMode ? 12 : 3)))
             {
                 var occurrence = new Meeting
                 {
@@ -1126,15 +1152,15 @@ public partial class MainWindow : Window
                 chip.Click += CalendarMeeting_Click;
                 panel.Children.Add(chip);
             }
-            if (!compact && occurrences.Count > 3)
-                panel.Children.Add(new System.Windows.Controls.TextBlock { Text = $"+{occurrences.Count - 3} more", Foreground = muted, Margin = new Thickness(3, 5, 0, 0), FontSize = 11 });
+            if ((!compact || weeklyCalendarMode) && occurrences.Count > (weeklyCalendarMode ? 12 : 3))
+                panel.Children.Add(new System.Windows.Controls.TextBlock { Text = $"+{occurrences.Count - (weeklyCalendarMode ? 12 : 3)} more", Foreground = muted, Margin = new Thickness(3, 5, 0, 0), FontSize = 11 });
             MonthCells.Children.Add(new System.Windows.Controls.Border
             {
                 Child = panel,
                 BorderBrush = borderBrush,
                 BorderThickness = new Thickness(0.5),
                 CornerRadius = new CornerRadius(5),
-                MinHeight = compact ? 55 : 100,
+                MinHeight = weeklyCalendarMode ? 260 : compact ? 55 : 100,
                 Background = (System.Windows.Media.Brush)System.Windows.Application.Current.Resources["CardBrush"]
             });
         }
