@@ -59,8 +59,7 @@ begin
     begin
       DataDir := ExpandConstant('{localappdata}\MeetingBuddy');
       if DirExists(DataDir) and not DelTree(DataDir, True, True, True) then
-        MsgBox('Some personal files could not be deleted from:' + #13#10 + DataDir +
-          #13#10 + 'Close any programs using these files and remove the folder manually.', mbError, MB_OK);
+        MsgBox('Some personal files could not be deleted from:' + #13#10 + DataDir + + #13#10 + 'Close any programs using these files and remove the folder manually.', mbError, MB_OK);
     end;
   end;
 end;
