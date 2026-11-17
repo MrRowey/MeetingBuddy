@@ -105,6 +105,42 @@ public partial class MainWindow : Window
     }
     private readonly HashSet<string> missedKeys = new();
     private readonly Dictionary<string, HashSet<int>> alertStages = new();
+    private readonly string reminderStatePath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "MeetingBuddy", "reminder-state.json");
+
+    private void LoadReminderState()
+    {
+        try
+        {
+            if (!File.Exists(reminderStatePath)) return;
+            var saved = JsonSerializer.Deserialize<Dictionary<string, HashSet<int>>>(File.ReadAllText(reminderStatePath));
+            if (saved == null) return;
+            foreach (var entry in saved)
+                if (entry.Value != null) alertStages[entry.Key] = entry.Value;
+        }
+        catch (JsonException)
+        {
+            // A damaged cache should never prevent the application starting.
+            try { File.Move(reminderStatePath, reminderStatePath + ".corrupt", true); } catch (IOException) { }
+        }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
+    }
+
+    private void SaveReminderState()
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(reminderStatePath)!);
+            var temp = reminderStatePath + ".tmp";
+            File.WriteAllText(temp, JsonSerializer.Serialize(alertStages));
+            File.Move(temp, reminderStatePath, true);
+        }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
+    }
+
     private DateTime lastReminderCheck = DateTime.Now;
     private string lastDailySummaryDate = "";
     private readonly bool needsFirstRunSetup = !File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MeetingBuddy", "settings.json"));
@@ -153,6 +189,7 @@ public partial class MainWindow : Window
                 });
         };
         Load();
+        LoadReminderState();
         InitializeImportFolder();
         InitializeStreamDeckBridge();
         if (Environment.GetCommandLineArgs().Any(a => a.Equals("--tray", StringComparison.OrdinalIgnoreCase)))
@@ -1615,6 +1652,7 @@ public partial class MainWindow : Window
 
     private void CheckMeetings()
     {
+        var stageCountBefore = alertStages.Sum(entry => entry.Value.Count);
         var now = DateTime.Now;
         // Detect resume after sleep or a suspended UI thread. Missed reminders are
         // collected by the existing missed-meeting centre rather than replayed as popups.
@@ -1708,5 +1746,6 @@ public partial class MainWindow : Window
                     alertStages.Remove(key);
             }
         }
+        if (stageCountBefore != alertStages.Sum(entry => entry.Value.Count)) SaveReminderState();
     }
 }
