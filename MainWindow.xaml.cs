@@ -769,7 +769,6 @@ public partial class MainWindow : Window
         NextMeetingText.Text = next.Original == null
             ? "No upcoming meetings"
             : $"Next: {next.Original.Title} • {next.When:ddd HH:mm} • starts in {Math.Max(0, (int)Math.Ceiling((next.When!.Value - now).TotalMinutes))} min";
-        if (StatusText != null) StatusText.Text = paused ? "Paused" : "Active";
         if (SidebarReminderStatus != null)
         {
             SidebarReminderStatus.Text = IsOnPto(DateTime.Today) ? "On leave" : (paused ? "Paused" : "Active");
